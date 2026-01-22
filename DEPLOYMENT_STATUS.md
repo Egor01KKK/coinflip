@@ -100,10 +100,62 @@ Basescan URL: https://sepolia.basescan.org/address/[ADDRESS]
 
 For more troubleshooting, see [contracts/DEPLOYMENT_GUIDE.md](./contracts/DEPLOYMENT_GUIDE.md).
 
+## Paymaster Configuration
+
+After contract deployment, configure Coinbase Paymaster for gasless transactions.
+
+### Status: ⏳ **AWAITING MANUAL CONFIGURATION**
+
+**Required**: CDP (Coinbase Developer Platform) account access
+
+### Quick Setup
+
+```bash
+# 1. Go to CDP dashboard
+open https://portal.cdp.coinbase.com/
+
+# 2. Follow the setup guide
+# See: PAYMASTER_SETUP_GUIDE.md
+```
+
+### Configuration Checklist
+
+- [ ] CDP account created/accessed
+- [ ] Paymaster service enabled for Base Sepolia
+- [ ] Policy created: "King of the Base - Gasless"
+- [ ] Contract address whitelisted: [YOUR_DEPLOYED_ADDRESS]
+- [ ] Rate limits configured: 10 per user per day
+- [ ] Spending caps set: $100 monthly
+- [ ] CDP API Key copied to `.env.local`
+- [ ] Paymaster URL copied to `.env.local`
+- [ ] Origin restrictions added (localhost + production domains)
+- [ ] Test transaction successful in CDP dashboard
+
+### Paymaster Details
+
+**After configuration, fill in this section:**
+
+```yaml
+Paymaster Status: [TO BE FILLED]
+Policy Name: King of the Base - Gasless
+Network: Base Sepolia (84532)
+CDP API Key: [CONFIGURED in .env.local]
+Paymaster URL: [CONFIGURED in .env.local]
+Rate Limits:
+  Per-User Daily: 10 transactions
+  Per-User Hourly: 3 transactions
+  Global Daily Budget: $10 USD
+  Global Monthly Budget: $100 USD
+Configuration Date: [TO BE FILLED]
+```
+
 ## Resources
 
 - 📚 Deployment Guide: [contracts/DEPLOYMENT_GUIDE.md](./contracts/DEPLOYMENT_GUIDE.md)
 - 🔍 Verification Script: [contracts/verify-deployment.sh](./contracts/verify-deployment.sh)
+- 💰 **Paymaster Setup Guide**: [PAYMASTER_SETUP_GUIDE.md](./PAYMASTER_SETUP_GUIDE.md)
+- 💳 **Quick Paymaster Setup**: [contracts/PAYMASTER_SETUP.md](./contracts/PAYMASTER_SETUP.md)
+- 🎛️ CDP Dashboard: https://portal.cdp.coinbase.com/
 - 🌐 Base Sepolia Explorer: https://sepolia.basescan.org
 - 💧 Base Sepolia Faucet: https://www.coinbase.com/faucets/base-ethereum-sepolia-faucet
 - 📖 Base Documentation: https://docs.base.org/
@@ -113,11 +165,11 @@ For more troubleshooting, see [contracts/DEPLOYMENT_GUIDE.md](./contracts/DEPLOY
 Once deployment is complete and verified:
 
 1. ✅ Mark subtask-3-1 as completed
-2. ➡️ Proceed to subtask-3-2: Configure Coinbase Paymaster
+2. ➡️ **CURRENT**: subtask-3-2: Configure Coinbase Paymaster (see [PAYMASTER_SETUP_GUIDE.md](./PAYMASTER_SETUP_GUIDE.md))
 3. ➡️ Then continue to Phase 4: Frontend Providers & Configuration
 
 ---
 
 **Last Updated**: 2026-01-22
 **Phase**: 3 - Contract Deployment to Base Sepolia
-**Subtask**: 3-1 - Deploy KingOfTheBase to Base Sepolia and verify on Basescan
+**Current Subtask**: 3-2 - Configure Coinbase Paymaster policy in CDP dashboard
