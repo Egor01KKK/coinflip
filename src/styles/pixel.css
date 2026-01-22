@@ -1,0 +1,605 @@
+/* ============================================
+   PIXEL.CSS - 8-bit Styling & Neon Accents
+   King of the Base Game
+   ============================================ */
+
+/* ============================================
+   PIXEL BUTTON STYLES
+   ============================================ */
+
+/* Base pixel button */
+.pixel-button {
+  font-family: 'Press Start 2P', cursive;
+  padding: 16px 24px;
+  font-size: 14px;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  border: 4px solid var(--accent-neon);
+  box-shadow:
+    0 0 10px var(--accent-neon),
+    inset 0 0 10px rgba(0, 255, 136, 0.1);
+  cursor: pointer;
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.1s ease;
+  image-rendering: pixelated;
+}
+
+.pixel-button:hover:not(:disabled) {
+  background-color: var(--accent-neon);
+  color: var(--bg-primary);
+  box-shadow:
+    0 0 20px var(--accent-neon),
+    0 0 30px var(--accent-neon);
+  transform: translate(-2px, -2px);
+}
+
+.pixel-button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 5px var(--accent-neon);
+}
+
+.pixel-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #555;
+  box-shadow: none;
+}
+
+/* Usurp button variant (red) */
+.pixel-button-usurp {
+  border-color: var(--accent-red);
+  box-shadow:
+    0 0 10px var(--accent-red),
+    inset 0 0 10px rgba(255, 68, 68, 0.1);
+}
+
+.pixel-button-usurp:hover:not(:disabled) {
+  background-color: var(--accent-red);
+  box-shadow:
+    0 0 20px var(--accent-red),
+    0 0 30px var(--accent-red);
+}
+
+/* Gold button variant */
+.pixel-button-gold {
+  border-color: var(--accent-gold);
+  box-shadow:
+    0 0 10px var(--accent-gold),
+    inset 0 0 10px rgba(255, 215, 0, 0.1);
+}
+
+.pixel-button-gold:hover:not(:disabled) {
+  background-color: var(--accent-gold);
+  color: var(--bg-primary);
+  box-shadow:
+    0 0 20px var(--accent-gold),
+    0 0 30px var(--accent-gold);
+}
+
+/* ============================================
+   PIXEL CARD/PANEL STYLES
+   ============================================ */
+
+/* Main card container */
+.pixel-card {
+  background-color: var(--bg-primary);
+  border: 4px solid var(--accent-neon);
+  padding: 24px;
+  position: relative;
+  box-shadow:
+    0 0 10px var(--accent-neon),
+    inset 0 0 20px rgba(0, 255, 136, 0.05);
+}
+
+/* Card with corners cut */
+.pixel-card-corners {
+  clip-path: polygon(
+    8px 0, calc(100% - 8px) 0,
+    100% 8px, 100% calc(100% - 8px),
+    calc(100% - 8px) 100%, 8px 100%,
+    0 calc(100% - 8px), 0 8px
+  );
+}
+
+/* Throne card (gold variant) */
+.pixel-throne-card {
+  background-color: var(--bg-primary);
+  border: 6px solid var(--accent-gold);
+  padding: 32px;
+  box-shadow:
+    0 0 20px var(--accent-gold),
+    inset 0 0 30px rgba(255, 215, 0, 0.1);
+  position: relative;
+}
+
+/* Add crown decoration to throne card */
+.pixel-throne-card::before {
+  content: '👑';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 32px;
+  text-shadow: 0 0 10px var(--accent-gold);
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Panel with inner glow */
+.pixel-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 255, 136, 0.1) 0%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+  border: 3px solid var(--accent-neon);
+  padding: 16px;
+  box-shadow: inset 0 0 15px rgba(0, 255, 136, 0.2);
+}
+
+/* ============================================
+   LEADERBOARD STYLES
+   ============================================ */
+
+.pixel-leaderboard {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 20px;
+}
+
+.pixel-leaderboard-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+/* Podium heights */
+.pixel-leaderboard-item:nth-child(1) {
+  order: 2;
+}
+
+.pixel-leaderboard-item:nth-child(2) {
+  order: 1;
+}
+
+.pixel-leaderboard-item:nth-child(3) {
+  order: 3;
+}
+
+/* Crown for #1 */
+.pixel-leaderboard-crown {
+  font-size: 24px;
+  animation: pulse-gold 2s infinite;
+}
+
+/* Avatar style */
+.pixel-avatar {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--accent-neon);
+  border-radius: 0; /* Keep it square/pixel style */
+  box-shadow: 0 0 10px var(--accent-neon);
+  image-rendering: pixelated;
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.pixel-avatar-gold {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 15px var(--accent-gold);
+}
+
+.pixel-avatar-small {
+  width: 32px;
+  height: 32px;
+  border-width: 2px;
+  font-size: 16px;
+}
+
+/* ============================================
+   TIMER & COUNTER STYLES
+   ============================================ */
+
+.pixel-timer {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 18px;
+  color: var(--accent-neon);
+  text-shadow: 0 0 10px var(--accent-neon);
+  letter-spacing: 4px;
+  padding: 12px 20px;
+  border: 3px solid var(--accent-neon);
+  background-color: rgba(0, 0, 0, 0.8);
+  display: inline-block;
+  position: relative;
+}
+
+.pixel-timer-warning {
+  color: var(--accent-red);
+  border-color: var(--accent-red);
+  text-shadow: 0 0 10px var(--accent-red);
+  animation: pulse-red 1s infinite;
+}
+
+/* Counter badge */
+.pixel-counter {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  padding: 8px 16px;
+  border: 2px solid var(--accent-neon);
+  background-color: var(--bg-primary);
+  display: inline-block;
+  box-shadow: 0 0 5px var(--accent-neon);
+}
+
+/* ============================================
+   MESSAGE/TEXT DISPLAY STYLES
+   ============================================ */
+
+.pixel-message-box {
+  background-color: rgba(0, 0, 0, 0.8);
+  border: 3px solid var(--accent-neon);
+  padding: 16px 20px;
+  font-size: 14px;
+  color: var(--text-primary);
+  text-align: center;
+  box-shadow:
+    inset 0 0 10px rgba(0, 255, 136, 0.2),
+    0 0 10px var(--accent-neon);
+  word-wrap: break-word;
+  letter-spacing: 1px;
+  line-height: 1.8;
+}
+
+.pixel-message-empty {
+  color: #888;
+  font-style: italic;
+}
+
+/* Username display */
+.pixel-username {
+  font-size: 16px;
+  color: var(--accent-gold);
+  text-shadow: 0 0 10px var(--accent-gold);
+  letter-spacing: 2px;
+  font-weight: bold;
+}
+
+/* ============================================
+   RETRO EFFECTS
+   ============================================ */
+
+/* Scanlines effect for retro CRT feel */
+.pixel-scanlines {
+  position: relative;
+  overflow: hidden;
+}
+
+.pixel-scanlines::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(0, 0, 0, 0.25) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Glitch effect */
+.pixel-glitch {
+  position: relative;
+  animation: glitch 3s infinite;
+}
+
+@keyframes glitch {
+  0%, 90%, 100% {
+    transform: translate(0);
+  }
+  91% {
+    transform: translate(-2px, 2px);
+  }
+  92% {
+    transform: translate(2px, -2px);
+  }
+  93% {
+    transform: translate(-2px, 2px);
+  }
+  94% {
+    transform: translate(0);
+  }
+}
+
+/* Pixelated divider */
+.pixel-divider {
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--accent-neon) 0px,
+    var(--accent-neon) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  margin: 20px 0;
+}
+
+/* ============================================
+   STATUS INDICATORS
+   ============================================ */
+
+.pixel-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 2px solid;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.pixel-status-protected {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  box-shadow: 0 0 10px var(--accent-gold);
+}
+
+.pixel-status-active {
+  border-color: var(--accent-neon);
+  color: var(--accent-neon);
+  box-shadow: 0 0 10px var(--accent-neon);
+}
+
+.pixel-status-danger {
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+  box-shadow: 0 0 10px var(--accent-red);
+}
+
+/* Status dot indicator */
+.pixel-dot {
+  width: 8px;
+  height: 8px;
+  background-color: currentColor;
+  box-shadow: 0 0 5px currentColor;
+  animation: blink 1.5s infinite;
+}
+
+/* ============================================
+   ADDITIONAL ANIMATIONS
+   ============================================ */
+
+@keyframes float {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0px);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-10px);
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--accent-red);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--accent-red), 0 0 30px var(--accent-red);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes neon-flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  41.99% {
+    opacity: 1;
+  }
+  42% {
+    opacity: 0;
+  }
+  43% {
+    opacity: 0;
+  }
+  45% {
+    opacity: 1;
+  }
+  47.99% {
+    opacity: 1;
+  }
+  48% {
+    opacity: 0;
+  }
+  49% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-flicker {
+  animation: neon-flicker 5s infinite;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Text utilities */
+.pixel-text-glow-neon {
+  color: var(--accent-neon);
+  text-shadow:
+    0 0 5px var(--accent-neon),
+    0 0 10px var(--accent-neon),
+    0 0 15px var(--accent-neon);
+}
+
+.pixel-text-glow-gold {
+  color: var(--accent-gold);
+  text-shadow:
+    0 0 5px var(--accent-gold),
+    0 0 10px var(--accent-gold),
+    0 0 15px var(--accent-gold);
+}
+
+.pixel-text-glow-red {
+  color: var(--accent-red);
+  text-shadow:
+    0 0 5px var(--accent-red),
+    0 0 10px var(--accent-red),
+    0 0 15px var(--accent-red);
+}
+
+/* Border utilities */
+.pixel-border-thick {
+  border: 6px solid var(--pixel-border);
+  box-shadow: 0 0 15px var(--accent-neon);
+}
+
+.pixel-border-thin {
+  border: 2px solid var(--pixel-border);
+  box-shadow: 0 0 5px var(--accent-neon);
+}
+
+.pixel-border-dashed {
+  border: 3px dashed var(--pixel-border);
+  box-shadow: 0 0 10px var(--accent-neon);
+}
+
+/* Background utilities */
+.pixel-bg-dark {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.pixel-bg-glow {
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 255, 136, 0.1) 0%,
+    transparent 70%
+  );
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+  .pixel-button {
+    padding: 12px 20px;
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  .pixel-card,
+  .pixel-throne-card {
+    padding: 16px;
+  }
+
+  .pixel-timer {
+    font-size: 14px;
+    padding: 10px 16px;
+    letter-spacing: 2px;
+  }
+
+  .pixel-message-box {
+    font-size: 12px;
+    padding: 12px 16px;
+  }
+
+  .pixel-username {
+    font-size: 14px;
+  }
+
+  .pixel-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .pixel-throne-card::before {
+    font-size: 24px;
+    top: -15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pixel-button {
+    padding: 10px 16px;
+    font-size: 10px;
+  }
+
+  .pixel-timer {
+    font-size: 12px;
+    padding: 8px 12px;
+    letter-spacing: 1px;
+  }
+
+  .pixel-message-box {
+    font-size: 10px;
+    padding: 10px 12px;
+  }
+
+  .pixel-leaderboard {
+    gap: 12px;
+    padding: 16px;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .pixel-button,
+  .pixel-card,
+  .pixel-panel {
+    border-width: 6px;
+  }
+
+  .pixel-text-glow-neon,
+  .pixel-text-glow-gold,
+  .pixel-text-glow-red {
+    text-shadow: none;
+    font-weight: bold;
+  }
+}
