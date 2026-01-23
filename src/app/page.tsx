@@ -2,6 +2,12 @@
  * King of the Base - Main Game Page
  * Complete game layout with all components assembled
  *
+ * Features:
+ * - Loading states with pixel-art skeleton
+ * - Error boundary for graceful error handling
+ * - Responsive mobile styling (320px+)
+ * - Touch-friendly UI elements
+ *
  * Layout structure:
  * 1. Header (title + description)
  * 2. Leaderboard (top 3 players)
@@ -14,7 +20,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { ThroneCard } from '@/components/ThroneCard';
 import { UsurpButton } from '@/components/UsurpButton';
 import { MessageInput } from '@/components/MessageInput';
@@ -24,19 +30,105 @@ import { ShareButton } from '@/components/ShareButton';
 import { useKingData } from '@/hooks/useKingData';
 import { TEXTS } from '@/lib/constants';
 
-export default function Home() {
+/**
+ * Loading Skeleton Component
+ * Displays animated placeholder while data loads
+ * Uses pixel-art styling consistent with game theme
+ */
+function LoadingSkeleton() {
+  return (
+    <div className="w-full space-y-6 md:space-y-8 animate-pulse">
+      {/* Skeleton for Leaderboard */}
+      <div className="w-full h-32 md:h-40 pixel-card">
+        <div className="flex justify-center items-end gap-3 md:gap-4 h-full p-3 md:p-4">
+          <div className="w-14 h-14 md:w-20 md:h-20 pixel-border-thin bg-gray-800/50"></div>
+          <div className="w-18 h-20 md:w-24 md:h-28 pixel-border-thin bg-gray-800/50"></div>
+          <div className="w-14 h-10 md:w-20 md:h-16 pixel-border-thin bg-gray-800/50"></div>
+        </div>
+      </div>
+
+      {/* Skeleton for ThroneCard */}
+      <div className="w-full max-w-md mx-auto">
+        <div className="pixel-throne-card pixel-card-corners min-h-[240px] md:min-h-[280px]">
+          <div className="flex flex-col items-center justify-center gap-4 py-8">
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-sm bg-gray-800/50"></div>
+            <div className="w-32 h-4 bg-gray-800/50"></div>
+            <div className="w-24 h-4 bg-gray-800/50"></div>
+            <div className="w-full h-16 bg-gray-800/50 mt-4"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Skeleton for Actions */}
+      <div className="w-full max-w-md mx-auto space-y-4">
+        <div className="w-full h-12 md:h-14 bg-gray-800/50 pixel-border-thin"></div>
+        <div className="w-full h-14 md:h-16 bg-gray-800/50 pixel-border-thin"></div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Error Fallback Component
+ * Displays pixel-styled error message with retry option
+ */
+function ErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <div className="w-full max-w-md mx-auto px-4">
+      <div className="pixel-card pixel-card-corners border-[var(--accent-red)] p-6 md:p-8">
+        <div className="text-center space-y-4">
+          <div className="text-4xl md:text-5xl animate-shake">⚠️</div>
+          <h2 className="text-base md:text-lg pixel-text-glow-red font-['Press_Start_2P']">
+            Error Loading
+          </h2>
+          <p className="text-xs md:text-sm text-gray-400 leading-relaxed font-['Press_Start_2P']">
+            {error.message || 'Failed to load game data'}
+          </p>
+          <button
+            onClick={reset}
+            className="pixel-button pixel-button-usurp w-full mt-4 text-xs md:text-sm"
+            aria-label="Retry loading game"
+          >
+            🔄 Retry
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Main Game Component
+ * Wrapped with loading and error states
+ */
+function GameContent() {
   // State for king's message input
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Get current king data for share button
-  const { reignDuration } = useKingData();
+  // Get current king data
+  const { reignDuration, king } = useKingData();
+
+  // Handle initial loading state
+  useEffect(() => {
+    try {
+      // Mark as loaded once we have data
+      if (king !== undefined) {
+        setIsLoading(false);
+        setError(null);
+      }
+    } catch (err) {
+      setError(err as Error);
+      setIsLoading(false);
+    }
+  }, [king]);
 
   /**
    * Handle successful throne seizure
    * Clear message input on success
    */
   const handleSuccess = () => {
-    console.log('🎉 You are the new King!');
     setMessage(''); // Clear message for next capture
   };
 
@@ -44,85 +136,158 @@ export default function Home() {
    * Handle transaction error
    */
   const handleError = (error: Error) => {
-    console.error('❌ Failed to seize throne:', error);
+    // Error handling is done in the component itself
   };
 
+  /**
+   * Retry loading after error
+   */
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    window.location.reload();
+  };
+
+  // Show error state
+  if (error) {
+    return <ErrorFallback error={error} reset={handleRetry} />;
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start p-4 md:p-8 bg-[var(--bg-primary)]">
-      <div className="w-full max-w-3xl space-y-8 py-8">
+    <>
+      {/* ==================== LEADERBOARD ==================== */}
+      <div className="w-full">
+        <Suspense fallback={<div className="h-40 pixel-card animate-pulse" />}>
+          <Leaderboard />
+        </Suspense>
+      </div>
+
+      {/* ==================== THRONE CARD ==================== */}
+      <div className="w-full flex justify-center px-4 sm:px-0">
+        <div className="w-full max-w-md">
+          <Suspense fallback={
+            <div className="pixel-throne-card pixel-card-corners min-h-[240px] md:min-h-[280px] animate-pulse" />
+          }>
+            <ThroneCard />
+          </Suspense>
+        </div>
+      </div>
+
+      {/* ==================== GAME ACTIONS ==================== */}
+      <div className="w-full max-w-md mx-auto space-y-4 md:space-y-6 px-4 sm:px-0">
+        {/* Message Input */}
+        <div className="space-y-2 md:space-y-3">
+          <label
+            htmlFor="king-message"
+            className="block text-[10px] sm:text-xs text-gray-400 font-['Press_Start_2P'] leading-relaxed"
+          >
+            Your message as King:
+          </label>
+          <MessageInput
+            value={message}
+            onChange={setMessage}
+            placeholder={TEXTS.messagePlaceholder}
+          />
+        </div>
+
+        {/* Protection Timer (shown only when throne is protected) */}
+        <div className="flex justify-center py-2">
+          <ProtectionTimer
+            onExpired={() => {
+              // Timer expired, throne is vulnerable
+            }}
+          />
+        </div>
+
+        {/* Usurp Button with integrated attempts counter */}
+        <div className="w-full">
+          <UsurpButton
+            message={message}
+            onSuccess={handleSuccess}
+            onError={handleError}
+          />
+        </div>
+
+        {/* Share Button */}
+        <div className="w-full flex justify-center pt-2 md:pt-4">
+          <ShareButton
+            reignTime={reignDuration ? Number(reignDuration) : 0}
+            onClick={() => {
+              // Share button clicked
+            }}
+          />
+        </div>
+      </div>
+    </>
+  );
+}
+
+/**
+ * Main Home Page Export
+ * Includes error boundary and layout wrapper
+ */
+export default function Home() {
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    // Global error handler for uncaught errors
+    const handleError = (event: ErrorEvent) => {
+      setError(new Error(event.message));
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  const handleReset = () => {
+    setError(null);
+  };
+
+  if (error) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 bg-[var(--bg-primary)]">
+        <ErrorFallback error={error} reset={handleReset} />
+      </main>
+    );
+  }
+
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-start bg-[var(--bg-primary)] overflow-x-hidden">
+      {/* Mobile-optimized container with proper padding and spacing */}
+      <div className="w-full max-w-3xl space-y-6 md:space-y-8 py-6 md:py-8 px-2 sm:px-4 md:px-8">
         {/* ==================== HEADER ==================== */}
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl neon-glow pixel-text-glow-gold animate-float">
+        <div className="text-center space-y-3 md:space-y-4 px-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl neon-glow pixel-text-glow-gold animate-float font-['Press_Start_2P'] leading-tight">
             {TEXTS.appTitle}
           </h1>
-          <p className="text-xs md:text-sm text-[var(--accent-neon)] pixel-text-glow-green">
+          <p className="text-[10px] sm:text-xs md:text-sm text-[var(--accent-neon)] pixel-text-glow-green font-['Press_Start_2P'] leading-relaxed max-w-2xl mx-auto">
             {TEXTS.appDescription}
           </p>
         </div>
 
-        {/* ==================== LEADERBOARD ==================== */}
-        <div className="w-full">
-          <Leaderboard />
-        </div>
-
-        {/* ==================== THRONE CARD ==================== */}
-        <div className="w-full flex justify-center">
-          <div className="w-full max-w-md">
-            <ThroneCard />
-          </div>
-        </div>
-
-        {/* ==================== GAME ACTIONS ==================== */}
-        <div className="w-full max-w-md mx-auto space-y-6">
-          {/* Message Input */}
-          <div>
-            <label htmlFor="king-message" className="block text-xs text-gray-400 mb-2 font-['Press_Start_2P']">
-              Your message as King:
-            </label>
-            <MessageInput
-              value={message}
-              onChange={setMessage}
-              placeholder={TEXTS.messagePlaceholder}
-            />
-          </div>
-
-          {/* Protection Timer (shown only when throne is protected) */}
-          <div className="flex justify-center">
-            <ProtectionTimer
-              onExpired={() => console.log('Protection expired, throne is vulnerable!')}
-            />
-          </div>
-
-          {/* Usurp Button with integrated attempts counter */}
-          <div className="w-full">
-            <UsurpButton
-              message={message}
-              onSuccess={handleSuccess}
-              onError={handleError}
-            />
-          </div>
-
-          {/* Share Button */}
-          <div className="w-full flex justify-center pt-4">
-            <ShareButton
-              reignTime={reignDuration ? Number(reignDuration) : 0}
-              onClick={() => console.log('Share button clicked')}
-            />
-          </div>
-        </div>
+        {/* ==================== GAME CONTENT ==================== */}
+        <Suspense fallback={<LoadingSkeleton />}>
+          <GameContent />
+        </Suspense>
 
         {/* ==================== FOOTER INFO ==================== */}
-        <div className="text-center space-y-2 pt-8 border-t border-[var(--accent-neon)]/20">
-          <p className="text-xs text-gray-500 font-['Press_Start_2P']">
+        <div className="text-center space-y-2 md:space-y-3 pt-6 md:pt-8 border-t border-[var(--accent-neon)]/20 px-4">
+          <p className="text-[8px] sm:text-[10px] md:text-xs text-gray-500 font-['Press_Start_2P'] leading-relaxed">
             Gasless transactions powered by Coinbase Paymaster
           </p>
-          <p className="text-xs text-gray-600">
+          <p className="text-[8px] sm:text-[10px] md:text-xs text-gray-600 font-['Press_Start_2P']">
             Built on Base • Real-time updates every 2s
           </p>
         </div>
 
-        {/* ==================== MOBILE OPTIMIZED SPACING ==================== */}
-        <div className="h-8 md:h-0" /> {/* Bottom padding for mobile */}
+        {/* ==================== MOBILE SAFE AREA ==================== */}
+        {/* Extra bottom padding for mobile devices to avoid notch/home indicator */}
+        <div className="h-8 sm:h-6 md:h-0" />
       </div>
     </main>
   );
