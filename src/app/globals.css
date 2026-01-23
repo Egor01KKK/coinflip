@@ -98,6 +98,55 @@ img {
   .text-pixel {
     font-family: 'Press Start 2P', cursive;
   }
+
+  .stone-frame {
+    border: 4px solid var(--border-stone);
+    background: linear-gradient(135deg, rgba(45, 55, 72, 0.2) 0%, rgba(0, 0, 0, 0.5) 100%);
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.3);
+    position: relative;
+  }
+
+  .arcade-button {
+    font-family: 'Press Start 2P', cursive;
+    padding: 16px 24px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    background-color: var(--bg-primary);
+    border: 4px solid var(--accent-neon);
+    box-shadow: 0 0 10px var(--accent-neon), inset 0 0 10px rgba(0, 255, 136, 0.1);
+    cursor: pointer;
+    transition: all 0.1s ease;
+    image-rendering: pixelated;
+  }
+
+  .arcade-button:hover {
+    background-color: var(--accent-neon);
+    color: var(--bg-primary);
+    box-shadow: 0 0 20px var(--accent-neon), 0 0 30px var(--accent-neon);
+    transform: translate(-2px, -2px);
+  }
+
+  .arcade-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 5px var(--accent-neon);
+  }
+
+  .dust-effect {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dust-effect::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: dust-sweep 3s infinite;
+  }
 }
 
 /* Button reset for pixel buttons */
@@ -159,6 +208,15 @@ textarea:focus {
   }
   50% {
     box-shadow: 0 0 20px var(--accent-gold), 0 0 30px var(--accent-gold);
+  }
+}
+
+@keyframes dust-sweep {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
   }
 }
 
