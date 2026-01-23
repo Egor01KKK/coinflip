@@ -21,6 +21,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import { Clock, Settings } from 'lucide-react';
 import { ThroneCard } from '@/components/ThroneCard';
 import { UsurpButton } from '@/components/UsurpButton';
 import { MessageInput } from '@/components/MessageInput';
@@ -341,6 +342,103 @@ function GameContent() {
 }
 
 /**
+ * Header Component
+ * Displays timer with clock icon and settings button
+ */
+function Header() {
+  // Timer state in format: hours:minutes:seconds:centiseconds (00:08:43:65)
+  const [time, setTime] = useState({ hours: 0, minutes: 8, seconds: 43, centiseconds: 65 });
+
+  useEffect(() => {
+    // Update timer every 10ms (for centisecond precision)
+    const interval = setInterval(() => {
+      setTime(prev => {
+        let { hours, minutes, seconds, centiseconds } = prev;
+
+        // Increment centiseconds
+        centiseconds += 1;
+
+        // Handle overflow
+        if (centiseconds >= 100) {
+          centiseconds = 0;
+          seconds += 1;
+        }
+
+        if (seconds >= 60) {
+          seconds = 0;
+          minutes += 1;
+        }
+
+        if (minutes >= 60) {
+          minutes = 0;
+          hours += 1;
+        }
+
+        // Keep hours within 2 digits (max 99)
+        if (hours >= 100) {
+          hours = 99;
+          minutes = 59;
+          seconds = 59;
+          centiseconds = 99;
+        }
+
+        return { hours, minutes, seconds, centiseconds };
+      });
+    }, 10);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  /**
+   * Format time to 00:08:43:65 format
+   */
+  const formatTime = () => {
+    const h = String(time.hours).padStart(2, '0');
+    const m = String(time.minutes).padStart(2, '0');
+    const s = String(time.seconds).padStart(2, '0');
+    const cs = String(time.centiseconds).padStart(2, '0');
+    return `${h}:${m}:${s}:${cs}`;
+  };
+
+  return (
+    <div className="w-full flex items-center justify-between px-3 py-3">
+      {/* Timer with Clock Icon */}
+      <div className="flex items-center gap-2">
+        <Clock
+          className="w-5 h-5 text-[var(--accent-cyan)]"
+          style={{
+            shapeRendering: 'crispEdges',
+            strokeWidth: 2,
+          }}
+        />
+        <div
+          className="text-xs sm:text-sm font-['Press_Start_2P'] text-[var(--accent-cyan)] neon-glow"
+          style={{
+            textShadow: '0 0 10px var(--accent-cyan), 0 0 20px var(--accent-cyan)',
+          }}
+        >
+          {formatTime()}
+        </div>
+      </div>
+
+      {/* Settings Button */}
+      <button
+        className="stone-frame p-2 transition-transform active:translate-y-0.5"
+        aria-label="Settings"
+      >
+        <Settings
+          className="w-5 h-5 text-gray-400"
+          style={{
+            shapeRendering: 'crispEdges',
+            strokeWidth: 2,
+          }}
+        />
+      </button>
+    </div>
+  );
+}
+
+/**
  * Main Home Page Export
  * Includes error boundary and layout wrapper
  */
@@ -373,7 +471,10 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-start bg-[var(--bg-primary)] overflow-x-hidden">
       {/* Mobile-optimized container with proper padding and spacing */}
       <div className="w-full max-w-3xl space-y-6 md:space-y-8 py-6 md:py-8 px-2 sm:px-4 md:px-8">
-        {/* ==================== HEADER ==================== */}
+        {/* ==================== HEADER WITH TIMER ==================== */}
+        <Header />
+
+        {/* ==================== TITLE AND DESCRIPTION ==================== */}
         <div className="text-center space-y-3 md:space-y-4 px-2">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl neon-glow pixel-text-glow-gold animate-float font-['Press_Start_2P'] leading-tight">
             {TEXTS.appTitle}
