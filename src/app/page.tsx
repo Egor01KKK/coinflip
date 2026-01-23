@@ -29,6 +29,7 @@ import { Leaderboard } from '@/components/Leaderboard';
 import { ShareButton } from '@/components/ShareButton';
 import { useKingData } from '@/hooks/useKingData';
 import { TEXTS } from '@/lib/constants';
+import { isContractConfigured } from '@/lib/contract';
 
 /**
  * Loading Skeleton Component
@@ -63,6 +64,94 @@ function LoadingSkeleton() {
       <div className="w-full max-w-md mx-auto space-y-4">
         <div className="w-full h-12 md:h-14 bg-gray-800/50 pixel-border-thin"></div>
         <div className="w-full h-14 md:h-16 bg-gray-800/50 pixel-border-thin"></div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Contract Not Configured Component
+ * Displays deployment instructions when contract is not set
+ */
+function ContractNotConfigured() {
+  return (
+    <div className="w-full max-w-2xl mx-auto px-4">
+      <div className="pixel-card pixel-card-corners border-[var(--accent-gold)] p-6 md:p-8">
+        <div className="space-y-6">
+          <div className="text-center space-y-4">
+            <div className="text-4xl md:text-5xl">🚀</div>
+            <h2 className="text-base md:text-lg pixel-text-glow-gold font-['Press_Start_2P']">
+              Contract Not Deployed
+            </h2>
+            <p className="text-xs md:text-sm text-gray-400 leading-relaxed font-['Press_Start_2P']">
+              The smart contract needs to be deployed before the game can start
+            </p>
+          </div>
+
+          <div className="space-y-4 text-left">
+            <h3 className="text-sm pixel-text-glow-green font-['Press_Start_2P']">
+              Deployment Steps:
+            </h3>
+
+            <div className="space-y-3 text-[10px] md:text-xs text-gray-300 font-['Press_Start_2P'] leading-relaxed">
+              <div className="pixel-border-thin p-3 bg-gray-900/50">
+                <p className="text-[var(--accent-neon)] mb-2">1. Install Foundry:</p>
+                <code className="block bg-black/50 p-2 text-[9px] md:text-[10px] overflow-x-auto">
+                  curl -L https://foundry.paradigm.xyz | bash
+                  <br />
+                  foundryup
+                </code>
+              </div>
+
+              <div className="pixel-border-thin p-3 bg-gray-900/50">
+                <p className="text-[var(--accent-neon)] mb-2">2. Get testnet ETH:</p>
+                <p className="text-[9px] md:text-[10px] text-gray-400">
+                  Visit: coinbase.com/faucets/base-ethereum-sepolia-faucet
+                </p>
+              </div>
+
+              <div className="pixel-border-thin p-3 bg-gray-900/50">
+                <p className="text-[var(--accent-neon)] mb-2">3. Configure private key:</p>
+                <code className="block bg-black/50 p-2 text-[9px] md:text-[10px] overflow-x-auto">
+                  cd contracts
+                  <br />
+                  cp .env.example .env
+                  <br />
+                  # Edit .env with your private key
+                </code>
+              </div>
+
+              <div className="pixel-border-thin p-3 bg-gray-900/50">
+                <p className="text-[var(--accent-neon)] mb-2">4. Deploy contract:</p>
+                <code className="block bg-black/50 p-2 text-[9px] md:text-[10px] overflow-x-auto">
+                  cd contracts
+                  <br />
+                  ./deploy.sh
+                </code>
+              </div>
+
+              <div className="pixel-border-thin p-3 bg-gray-900/50">
+                <p className="text-[var(--accent-neon)] mb-2">5. Update .env.local:</p>
+                <code className="block bg-black/50 p-2 text-[9px] md:text-[10px] overflow-x-auto">
+                  NEXT_PUBLIC_CONTRACT_ADDRESS=0x...
+                </code>
+              </div>
+
+              <div className="pixel-border-thin p-3 bg-gray-900/50">
+                <p className="text-[var(--accent-neon)] mb-2">6. Restart dev server:</p>
+                <code className="block bg-black/50 p-2 text-[9px] md:text-[10px] overflow-x-auto">
+                  npm run dev
+                </code>
+              </div>
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-[10px] md:text-xs text-gray-500 font-['Press_Start_2P'] leading-relaxed">
+                See DEPLOYMENT_GUIDE.md for detailed instructions
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -107,22 +196,41 @@ function GameContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Get current king data
+  // Check if contract is configured
+  const contractConfigured = isContractConfigured();
+
+  // Get current king data (only if contract is configured)
   const { reignDuration, king } = useKingData();
 
   // Handle initial loading state
   useEffect(() => {
+    // If contract is not configured, show config screen after brief delay
+    if (!contractConfigured) {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+
     try {
       // Mark as loaded once we have data
       if (king !== undefined) {
         setIsLoading(false);
         setError(null);
+      } else {
+        // If no data after 3 seconds, something might be wrong
+        const timeout = setTimeout(() => {
+          if (king === undefined) {
+            setIsLoading(false);
+          }
+        }, 3000);
+        return () => clearTimeout(timeout);
       }
     } catch (err) {
       setError(err as Error);
       setIsLoading(false);
     }
-  }, [king]);
+  }, [king, contractConfigured]);
 
   /**
    * Handle successful throne seizure
@@ -147,6 +255,11 @@ function GameContent() {
     setIsLoading(true);
     window.location.reload();
   };
+
+  // Show contract not configured screen
+  if (!contractConfigured && !isLoading) {
+    return <ContractNotConfigured />;
+  }
 
   // Show error state
   if (error) {

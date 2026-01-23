@@ -7,7 +7,16 @@
  * Contract address from environment variable
  * Set NEXT_PUBLIC_CONTRACT_ADDRESS in .env.local after deployment
  */
-export const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`;
+const rawAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
+export const CONTRACT_ADDRESS = (rawAddress || '0x0000000000000000000000000000000000000000') as `0x${string}`;
+
+/**
+ * Check if contract address is configured
+ * Returns false if address is empty or zero address
+ */
+export const isContractConfigured = (): boolean => {
+  return Boolean(rawAddress) && rawAddress !== '0x0000000000000000000000000000000000000000';
+};
 
 /**
  * KingOfTheBase Contract ABI
