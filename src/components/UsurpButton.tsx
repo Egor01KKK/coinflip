@@ -10,6 +10,8 @@ import {
   Transaction,
   TransactionButton,
   TransactionStatus,
+  TransactionStatusLabel,
+  TransactionStatusAction,
 } from '@coinbase/onchainkit/transaction';
 import { useSeizeThrone } from '@/hooks/useSeizeThrone';
 import { useKingData } from '@/hooks/useKingData';
@@ -50,7 +52,7 @@ export interface UsurpButtonProps {
 export function UsurpButton({ message, onSuccess, onError }: UsurpButtonProps) {
   const { prepareSeizeThrone, isValidMessage } = useSeizeThrone();
   const { isProtected } = useKingData();
-  const { attemptsRemaining, decrementAttempts } = useFreeAttempts();
+  const { remainingAttempts, useAttempt } = useFreeAttempts();
 
   // Prepare transaction calls
   const calls = (() => {
@@ -65,7 +67,7 @@ export function UsurpButton({ message, onSuccess, onError }: UsurpButtonProps) {
   // Determine if button should be disabled
   const isDisabled =
     isProtected === true || // Throne is protected
-    attemptsRemaining === 0 || // No attempts left
+    remainingAttempts === 0 || // No attempts left
     !isValidMessage(message) || // Invalid message
     calls.length === 0; // Failed to prepare transaction
 
@@ -73,11 +75,9 @@ export function UsurpButton({ message, onSuccess, onError }: UsurpButtonProps) {
    * Handle transaction status updates
    */
   const handleStatus = (status: LifecycleStatus) => {
-    console.log('Transaction status:', status.statusName);
-
     if (status.statusName === 'success') {
       // Decrement free attempts count
-      decrementAttempts();
+      useAttempt();
 
       // Call success callback
       onSuccess?.();
@@ -94,7 +94,7 @@ export function UsurpButton({ message, onSuccess, onError }: UsurpButtonProps) {
    */
   const getDisabledReason = (): string | undefined => {
     if (isProtected) return TEXTS.protectionActive;
-    if (attemptsRemaining === 0) return 'No attempts remaining';
+    if (remainingAttempts === 0) return 'No attempts remaining';
     if (!isValidMessage(message)) return 'Message too long';
     return undefined;
   };
@@ -112,7 +112,10 @@ export function UsurpButton({ message, onSuccess, onError }: UsurpButtonProps) {
           disabled={isDisabled}
           className="pixel-button-usurp w-full md:w-auto px-12 py-4 text-lg"
         />
-        <TransactionStatus />
+        <TransactionStatus>
+          <TransactionStatusLabel />
+          <TransactionStatusAction />
+        </TransactionStatus>
       </Transaction>
 
       {/* Show disabled reason */}
@@ -123,9 +126,9 @@ export function UsurpButton({ message, onSuccess, onError }: UsurpButtonProps) {
       )}
 
       {/* Show remaining attempts */}
-      {!isDisabled && attemptsRemaining > 0 && (
+      {!isDisabled && remainingAttempts > 0 && (
         <p className="text-sm text-gray-400 text-center">
-          {TEXTS.freeAttempts} {attemptsRemaining}/{10}
+          {TEXTS.freeAttempts} {remainingAttempts}/{10}
         </p>
       )}
     </div>

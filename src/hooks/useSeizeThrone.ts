@@ -12,7 +12,7 @@ import type { ContractFunctionParameters } from 'viem';
  * Transaction call structure for OnchainKit Transaction component
  */
 export interface SeizeThroneCall {
-  address: `0x${string}`;
+  to: `0x${string}`;
   abi: typeof CONTRACT_ABI;
   functionName: 'seizeThrone';
   args: [string];
@@ -78,7 +78,7 @@ export function useSeizeThrone(): UseSeizeThroneReturn {
     // Return transaction call array for OnchainKit Transaction component
     return [
       {
-        address: CONTRACT_ADDRESS,
+        to: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'seizeThrone',
         args: [message],
