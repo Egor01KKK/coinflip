@@ -439,6 +439,85 @@ function Header() {
 }
 
 /**
+ * Main Throne Room Component
+ * Displays isometric throne room with king sprite overlay
+ */
+function ThroneRoom() {
+  return (
+    <div className="flex-grow flex items-center justify-center relative overflow-hidden px-4">
+      {/* Throne Room Container */}
+      <div className="relative w-full max-w-sm aspect-square flex items-center justify-center">
+        {/* Throne Room Background - Isometric dungeon aesthetic */}
+        <div
+          className="absolute inset-0 rounded-lg"
+          style={{
+            background: `
+              radial-gradient(ellipse at center,
+                rgba(100, 80, 150, 0.3) 0%,
+                rgba(50, 40, 80, 0.5) 40%,
+                rgba(20, 15, 40, 0.8) 80%,
+                rgba(5, 5, 16, 0.95) 100%
+              ),
+              linear-gradient(135deg,
+                rgba(60, 50, 100, 0.2) 0%,
+                rgba(40, 30, 70, 0.3) 50%,
+                rgba(20, 15, 40, 0.4) 100%
+              )
+            `,
+            boxShadow: `
+              inset 0 0 60px rgba(100, 80, 150, 0.2),
+              inset 0 0 120px rgba(50, 40, 80, 0.3),
+              0 0 40px rgba(0, 0, 0, 0.5)
+            `,
+          }}
+        />
+
+        {/* King Sprite Overlay */}
+        <div className="relative z-10 flex flex-col items-center justify-center">
+          {/* King character - using throne emoji as placeholder */}
+          <div
+            className="text-8xl"
+            style={{
+              filter: 'drop-shadow(0 10px 20px rgba(0, 0, 0, 0.6))',
+              imageRendering: 'pixelated',
+            }}
+          >
+            🤴
+          </div>
+
+          {/* Throne base */}
+          <div
+            className="text-6xl -mt-4"
+            style={{
+              filter: 'drop-shadow(0 5px 15px rgba(0, 0, 0, 0.8))',
+              imageRendering: 'pixelated',
+            }}
+          >
+            👑
+          </div>
+        </div>
+
+        {/* Dust/Light Effect Overlay */}
+        <div className="dust-effect" />
+
+        {/* Additional atmospheric light effect */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `
+              radial-gradient(circle at 50% 30%,
+                rgba(0, 255, 255, 0.05) 0%,
+                transparent 50%
+              )
+            `,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
  * Main Home Page Export
  * Includes error boundary and layout wrapper
  */
@@ -461,48 +540,22 @@ export default function Home() {
 
   if (error) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 bg-[var(--bg-primary)]">
+      <main className="flex h-screen flex-col items-center justify-center p-4 bg-[var(--bg-primary)]">
         <ErrorFallback error={error} reset={handleReset} />
       </main>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start bg-[var(--bg-primary)] overflow-x-hidden">
-      {/* Mobile-optimized container with proper padding and spacing */}
-      <div className="w-full max-w-3xl space-y-6 md:space-y-8 py-6 md:py-8 px-2 sm:px-4 md:px-8">
-        {/* ==================== HEADER WITH TIMER ==================== */}
-        <Header />
+    <main className="h-screen flex flex-col bg-[var(--bg-primary)] overflow-hidden">
+      {/* ==================== HEADER WITH TIMER ==================== */}
+      <Header />
 
-        {/* ==================== TITLE AND DESCRIPTION ==================== */}
-        <div className="text-center space-y-3 md:space-y-4 px-2">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl neon-glow pixel-text-glow-gold animate-float font-['Press_Start_2P'] leading-tight">
-            {TEXTS.appTitle}
-          </h1>
-          <p className="text-[10px] sm:text-xs md:text-sm text-[var(--accent-neon)] pixel-text-glow-green font-['Press_Start_2P'] leading-relaxed max-w-2xl mx-auto">
-            {TEXTS.appDescription}
-          </p>
-        </div>
+      {/* ==================== MAIN THRONE ROOM ==================== */}
+      <ThroneRoom />
 
-        {/* ==================== GAME CONTENT ==================== */}
-        <Suspense fallback={<LoadingSkeleton />}>
-          <GameContent />
-        </Suspense>
-
-        {/* ==================== FOOTER INFO ==================== */}
-        <div className="text-center space-y-2 md:space-y-3 pt-6 md:pt-8 border-t border-[var(--accent-neon)]/20 px-4">
-          <p className="text-[8px] sm:text-[10px] md:text-xs text-gray-500 font-['Press_Start_2P'] leading-relaxed">
-            Gasless transactions powered by Coinbase Paymaster
-          </p>
-          <p className="text-[8px] sm:text-[10px] md:text-xs text-gray-600 font-['Press_Start_2P']">
-            Built on Base • Real-time updates every 2s
-          </p>
-        </div>
-
-        {/* ==================== MOBILE SAFE AREA ==================== */}
-        {/* Extra bottom padding for mobile devices to avoid notch/home indicator */}
-        <div className="h-8 sm:h-6 md:h-0" />
-      </div>
+      {/* ==================== FOOTER (Placeholder for next subtask) ==================== */}
+      {/* Footer with action button will be added in subtask-4-3 */}
     </main>
   );
 }
