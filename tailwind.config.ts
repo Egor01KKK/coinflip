@@ -9,10 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        'bg-primary': '#0a0a0a',
+        'bg-primary': '#050510',
+        'bg-secondary': '#0a0a0a',
+        'border-stone': '#2d3748',
         'accent-neon': '#00ff88',
+        'accent-cyan': '#00ffff',
         'accent-gold': '#ffd700',
-        'accent-red': '#ff4444',
+        'accent-red': '#FF0000',
         'text-primary': '#ffffff',
         'pixel-border': '#00ff88',
       },
