@@ -518,6 +518,58 @@ function ThroneRoom() {
 }
 
 /**
+ * Footer Component
+ * Big red action button with 3D shadow effect and cooldown state
+ */
+function Footer() {
+  const [cooldownTime, setCooldownTime] = useState<number>(0);
+  const [isOnCooldown, setIsOnCooldown] = useState(false);
+
+  /**
+   * Handle button click - trigger cooldown
+   */
+  const handleAttack = () => {
+    if (isOnCooldown) return;
+
+    // Start cooldown (3 seconds as per game design)
+    setIsOnCooldown(true);
+    setCooldownTime(3);
+  };
+
+  /**
+   * Cooldown timer effect
+   */
+  useEffect(() => {
+    if (!isOnCooldown) return;
+
+    const interval = setInterval(() => {
+      setCooldownTime((prev) => {
+        if (prev <= 0.1) {
+          setIsOnCooldown(false);
+          return 0;
+        }
+        return prev - 0.1;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isOnCooldown]);
+
+  return (
+    <div className="w-full">
+      <button
+        className="footer-action-button"
+        disabled={isOnCooldown}
+        onClick={handleAttack}
+        aria-label={isOnCooldown ? `Cooldown ${cooldownTime.toFixed(1)}s` : 'Attack'}
+      >
+        {isOnCooldown ? `COOLDOWN ${cooldownTime.toFixed(1)}s` : '⚔️ USURP ⚔️'}
+      </button>
+    </div>
+  );
+}
+
+/**
  * Main Home Page Export
  * Includes error boundary and layout wrapper
  */
@@ -554,8 +606,8 @@ export default function Home() {
       {/* ==================== MAIN THRONE ROOM ==================== */}
       <ThroneRoom />
 
-      {/* ==================== FOOTER (Placeholder for next subtask) ==================== */}
-      {/* Footer with action button will be added in subtask-4-3 */}
+      {/* ==================== FOOTER WITH ACTION BUTTON ==================== */}
+      <Footer />
     </main>
   );
 }

@@ -78,6 +78,43 @@
     0 0 30px var(--accent-gold);
 }
 
+/* Footer action button variant (red with 3D shadow) */
+.footer-action-button {
+  font-family: 'Press Start 2P', cursive;
+  width: 100%;
+  height: 80px;
+  font-size: 16px;
+  color: white;
+  background-color: #cc0000;
+  border: none;
+  box-shadow: 0 6px 0 #990000;
+  cursor: pointer;
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.1s ease;
+  image-rendering: pixelated;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-action-button:hover:not(:disabled) {
+  background-color: #dd0000;
+}
+
+.footer-action-button:active:not(:disabled) {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 #990000;
+}
+
+.footer-action-button:disabled {
+  background-color: #666;
+  box-shadow: 0 6px 0 #444;
+  cursor: not-allowed;
+  color: #999;
+}
+
 /* ============================================
    PIXEL CARD/PANEL STYLES
    ============================================ */
