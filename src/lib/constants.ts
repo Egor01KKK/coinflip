@@ -1,83 +1,47 @@
-/**
- * King of the Base - Application Constants
- * Colors, limits, texts, and configuration values
- */
+// Chain configuration
+export const CHAIN_ID = 8453; // Base Mainnet
+export const CHAIN_ID_SEPOLIA = 84532; // Base Sepolia
 
-/**
- * Color Palette - Pixel/Neon Theme
- * 8-bit retro style with neon green accents
- */
-export const COLORS = {
-  bgPrimary: '#0a0a0a',      // Black background
-  accentNeon: '#00ff88',     // Neon green (main accent)
-  accentGold: '#ffd700',     // Gold (crown/king theme)
-  accentRed: '#ff4444',      // Red (usurp/action button)
-  textPrimary: '#ffffff',    // White text
-  pixelBorder: '#00ff88',    // Pixel art borders (neon green)
-} as const;
+// Use Sepolia for development, switch to mainnet for production
+export const IS_TESTNET = process.env.NODE_ENV === "development";
+export const ACTIVE_CHAIN_ID = IS_TESTNET ? CHAIN_ID_SEPOLIA : CHAIN_ID;
 
-/**
- * Game Limits and Configuration
- */
-export const LIMITS = {
-  messageMaxLength: 30,        // Max characters for king message
-  dailyFreeAttempts: 10,       // Free attempts per day
-  protectionTimeSeconds: 3,    // Protection period after throne capture
-  pollingIntervalMs: 2000,     // Real-time update interval (2 seconds)
-  leaderboardTopCount: 3,      // Number of top players to display
-} as const;
+// Contract address - update after deployment
+export const CONTRACT_ADDRESS =
+  (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`) ||
+  "0x0000000000000000000000000000000000000000";
 
-/**
- * Chain IDs for Base Network
- */
-export const CHAIN_IDS = {
-  base: 8453,           // Base Mainnet
-  baseSepolia: 84532,   // Base Sepolia Testnet
-} as const;
+// Leaderboard refresh interval (ms)
+export const LEADERBOARD_REFRESH_INTERVAL = 5000;
 
-/**
- * UI Text Constants
- */
-export const TEXTS = {
-  appTitle: 'King of the Base',
-  appDescription: 'Seize the throne. Rule the Base.',
+// Share text templates
+export const SHARE_TEMPLATES = {
+  streak: (streak: number) =>
+    `I just hit a ${streak} flip streak on CoinFlip! Can you beat it?`,
+  win: (wins: number, total: number) =>
+    `I've won ${wins}/${total} flips on CoinFlip! Playing on Base.`,
+  newRecord: (streak: number) =>
+    `NEW RECORD! ${streak} flip streak on CoinFlip! Who can beat this?`,
+};
 
-  // Button Labels
-  usurpButton: '⚔️ USURP ⚔️',
-  seizeThrone: 'Seize the Throne',
-  shareButton: '📢 Challenge Friends',
-  connectWallet: 'Connect Wallet',
+// App metadata
+export const APP_NAME = "CoinFlip";
+export const APP_DESCRIPTION =
+  "Flip coins onchain on Base. Build your streak and climb the leaderboard!";
+export const APP_URL = "https://coinflip.base.org"; // Update with actual URL
 
-  // Status Messages
-  noKing: 'The throne is empty...',
-  youAreKing: '👑 You are the King!',
-  protectionActive: '🛡️ Protection Active',
-
-  // Placeholders
-  messagePlaceholder: 'Your royal message...',
-
-  // Labels
-  reigningFor: 'Reigning:',
-  freeAttempts: 'Free attempts:',
-  topLeaders: '👑 Top Leaders',
-
-  // Share Text Template
-  shareTextTemplate: (reignTime: number) =>
-    `👑 I just became King of the Base!\nReigned for ${reignTime}s\nCan you dethrone me?\n\n🎮 Play now:`,
-} as const;
-
-/**
- * Local Storage Keys
- */
-export const STORAGE_KEYS = {
-  freeAttempts: 'kotb_free_attempts',
-  lastAttemptDate: 'kotb_last_attempt_date',
-} as const;
-
-/**
- * Warpcast (Farcaster) Configuration
- */
-export const WARPCAST = {
-  composeUrl: 'https://warpcast.com/~/compose',
-  appUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://kingofthebase.app',
-} as const;
+// Farcaster frame metadata
+export const FARCASTER_FRAME = {
+  version: "next",
+  imageUrl: `${APP_URL}/og-image.png`,
+  button: {
+    title: "Play CoinFlip",
+    action: {
+      type: "launch_frame",
+      name: APP_NAME,
+      url: APP_URL,
+      splashImageUrl: `${APP_URL}/splash.png`,
+      splashBackgroundColor: "#1a1a2e",
+    },
+  },
+};

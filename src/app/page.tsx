@@ -1,613 +1,181 @@
-/**
- * King of the Base - Main Game Page
- * Complete game layout with all components assembled
- *
- * Features:
- * - Loading states with pixel-art skeleton
- * - Error boundary for graceful error handling
- * - Responsive mobile styling (320px+)
- * - Touch-friendly UI elements
- *
- * Layout structure:
- * 1. Header (title + description)
- * 2. Leaderboard (top 3 players)
- * 3. ThroneCard (current king info)
- * 4. MessageInput (enter king message)
- * 5. ProtectionTimer (shown when protection is active)
- * 6. UsurpButton (seize throne with gasless transaction)
- * 7. ShareButton (challenge friends on Farcaster)
- */
+"use client";
 
-'use client';
+import { useState, useCallback } from "react";
+import { useAccount, useWatchContractEvent } from "wagmi";
+import { Coin } from "@/components/Coin";
+import { FlipButtons } from "@/components/FlipButtons";
+import { Stats } from "@/components/Stats";
+import { Leaderboard } from "@/components/Leaderboard";
+import { ShareButton } from "@/components/ShareButton";
+import { ResultOverlay } from "@/components/ResultOverlay";
+import { ConnectButton } from "@/components/ConnectButton";
+import { LoginScreen } from "@/components/LoginScreen";
+import { useFlip } from "@/hooks/useFlip";
+import { usePlayerStats } from "@/hooks/usePlayerStats";
+import { coinFlipContract } from "@/lib/contract";
 
-import { useState, useEffect, Suspense } from 'react';
-import { Clock, Settings } from 'lucide-react';
-import { ThroneCard } from '@/components/ThroneCard';
-import { UsurpButton } from '@/components/UsurpButton';
-import { MessageInput } from '@/components/MessageInput';
-import { ProtectionTimer } from '@/components/ProtectionTimer';
-import { Leaderboard } from '@/components/Leaderboard';
-import { ShareButton } from '@/components/ShareButton';
-import { useKingData } from '@/hooks/useKingData';
-import { TEXTS } from '@/lib/constants';
-import { isContractConfigured } from '@/lib/contract';
+export default function Home() {
+  const { isConnected } = useAccount();
+  const { flip, isFlipping, setResult, resetFlip, error, hash } = useFlip();
+  const { stats, refetch: refetchStats } = usePlayerStats();
 
-/**
- * Loading Skeleton Component
- * Displays animated placeholder while data loads
- * Uses pixel-art styling consistent with game theme
- */
-function LoadingSkeleton() {
-  return (
-    <div className="w-full space-y-6 md:space-y-8 animate-pulse">
-      {/* Skeleton for Leaderboard */}
-      <div className="w-full h-32 md:h-40 pixel-card">
-        <div className="flex justify-center items-end gap-3 md:gap-4 h-full p-3 md:p-4">
-          <div className="w-14 h-14 md:w-20 md:h-20 pixel-border-thin bg-gray-800/50"></div>
-          <div className="w-18 h-20 md:w-24 md:h-28 pixel-border-thin bg-gray-800/50"></div>
-          <div className="w-14 h-10 md:w-20 md:h-16 pixel-border-thin bg-gray-800/50"></div>
-        </div>
-      </div>
+  const [coinResult, setCoinResult] = useState<"heads" | "tails" | null>(null);
+  const [lastFlipResult, setLastFlipResult] = useState<{
+    won: boolean;
+    streak: number;
+    isNewRecord: boolean;
+  } | null>(null);
+  const [showStats, setShowStats] = useState(false);
 
-      {/* Skeleton for ThroneCard */}
-      <div className="w-full max-w-md mx-auto">
-        <div className="pixel-throne-card pixel-card-corners min-h-[240px] md:min-h-[280px]">
-          <div className="flex flex-col items-center justify-center gap-4 py-8">
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-sm bg-gray-800/50"></div>
-            <div className="w-32 h-4 bg-gray-800/50"></div>
-            <div className="w-24 h-4 bg-gray-800/50"></div>
-            <div className="w-full h-16 bg-gray-800/50 mt-4"></div>
-          </div>
-        </div>
-      </div>
+  // Watch for FlipResult events
+  useWatchContractEvent({
+    ...coinFlipContract,
+    eventName: "FlipResult",
+    onLogs(logs) {
+      const log = logs[0];
+      if (log && log.args) {
+        const { guessedHeads, wasHeads, won, currentStreak, maxStreak } = log.args;
 
-      {/* Skeleton for Actions */}
-      <div className="w-full max-w-md mx-auto space-y-4">
-        <div className="w-full h-12 md:h-14 bg-gray-800/50 pixel-border-thin"></div>
-        <div className="w-full h-14 md:h-16 bg-gray-800/50 pixel-border-thin"></div>
-      </div>
-    </div>
+        // Update coin result
+        setCoinResult(wasHeads ? "heads" : "tails");
+
+        // Update flip result
+        setResult({
+          won: won ?? false,
+          wasHeads: wasHeads ?? false,
+          guessedHeads: guessedHeads ?? false,
+        });
+
+        // Check if new record
+        const prevMaxStreak = stats?.maxStreak ?? 0n;
+        const isNewRecord = maxStreak !== undefined && maxStreak > prevMaxStreak;
+
+        setLastFlipResult({
+          won: won ?? false,
+          streak: Number(currentStreak ?? 0),
+          isNewRecord,
+        });
+
+        // Refetch stats
+        refetchStats();
+      }
+    },
+  });
+
+  // Handle flip action
+  const handleFlip = useCallback(
+    async (guessHeads: boolean) => {
+      setCoinResult(null);
+      setLastFlipResult(null);
+      await flip(guessHeads);
+    },
+    [flip]
   );
-}
 
-/**
- * Contract Not Configured Component
- * Displays deployment instructions when contract is not set
- */
-function ContractNotConfigured() {
+  // Handle result overlay dismiss
+  const handleDismissResult = useCallback(() => {
+    setLastFlipResult(null);
+    resetFlip();
+  }, [resetFlip]);
+
+  // Show login screen if not connected
+  if (!isConnected) {
+    return <LoginScreen />;
+  }
+
+  // Game screen
   return (
-    <div className="w-full max-w-2xl mx-auto px-4">
-      <div className="pixel-card pixel-card-corners border-[var(--accent-gold)] p-6 md:p-8">
-        <div className="space-y-6">
-          <div className="text-center space-y-4">
-            <div className="text-4xl md:text-5xl">🚀</div>
-            <h2 className="text-base md:text-lg pixel-text-glow-gold font-['Press_Start_2P']">
-              Contract Not Deployed
-            </h2>
-            <p className="text-xs md:text-sm text-gray-400 leading-relaxed font-['Press_Start_2P']">
-              The smart contract needs to be deployed before the game can start
+    <main className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="flex justify-between items-center p-4 border-b border-pixel-border">
+        <h1 className="font-pixel text-lg text-gold">COINFLIP</h1>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowStats(!showStats)}
+            className="font-pixel text-xs text-gray-400 hover:text-gold transition-colors"
+          >
+            Stats
+          </button>
+          <ConnectButton />
+        </div>
+      </header>
+
+      {/* Stats panel */}
+      {showStats && (
+        <div className="border-b border-pixel-border bg-pixel-card/50">
+          <Stats showDetailed />
+        </div>
+      )}
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-4">
+        {/* Quick stats */}
+        <Stats />
+
+        {/* Coin */}
+        <div className="my-8">
+          <Coin
+            isFlipping={isFlipping}
+            result={coinResult}
+            onAnimationEnd={() => {}}
+          />
+        </div>
+
+        {/* Flip buttons */}
+        <FlipButtons
+          onFlip={handleFlip}
+          disabled={isFlipping}
+          isConnected={true}
+        />
+
+        {/* Error message */}
+        {error && (
+          <div className="mt-4 p-3 bg-red-500/20 border border-red-500 rounded-lg">
+            <p className="font-pixel text-xs text-red-400">
+              {error.message.includes("Wait for next block")
+                ? "Wait for next block to flip again!"
+                : "Transaction failed. Try again!"}
             </p>
           </div>
+        )}
 
-          <div className="space-y-4 text-left">
-            <h3 className="text-sm pixel-text-glow-green font-['Press_Start_2P']">
-              Deployment Steps:
-            </h3>
-
-            <div className="space-y-3 text-[10px] md:text-xs text-gray-300 font-['Press_Start_2P'] leading-relaxed">
-              <div className="pixel-border-thin p-3 bg-gray-900/50">
-                <p className="text-[var(--accent-neon)] mb-2">1. Install Foundry:</p>
-                <code className="block bg-black/50 p-2 text-[9px] md:text-[10px] overflow-x-auto">
-                  curl -L https://foundry.paradigm.xyz | bash
-                  <br />
-                  foundryup
-                </code>
-              </div>
-
-              <div className="pixel-border-thin p-3 bg-gray-900/50">
-                <p className="text-[var(--accent-neon)] mb-2">2. Get testnet ETH:</p>
-                <p className="text-[9px] md:text-[10px] text-gray-400">
-                  Visit: coinbase.com/faucets/base-ethereum-sepolia-faucet
-                </p>
-              </div>
-
-              <div className="pixel-border-thin p-3 bg-gray-900/50">
-                <p className="text-[var(--accent-neon)] mb-2">3. Configure private key:</p>
-                <code className="block bg-black/50 p-2 text-[9px] md:text-[10px] overflow-x-auto">
-                  cd contracts
-                  <br />
-                  cp .env.example .env
-                  <br />
-                  # Edit .env with your private key
-                </code>
-              </div>
-
-              <div className="pixel-border-thin p-3 bg-gray-900/50">
-                <p className="text-[var(--accent-neon)] mb-2">4. Deploy contract:</p>
-                <code className="block bg-black/50 p-2 text-[9px] md:text-[10px] overflow-x-auto">
-                  cd contracts
-                  <br />
-                  ./deploy.sh
-                </code>
-              </div>
-
-              <div className="pixel-border-thin p-3 bg-gray-900/50">
-                <p className="text-[var(--accent-neon)] mb-2">5. Update .env.local:</p>
-                <code className="block bg-black/50 p-2 text-[9px] md:text-[10px] overflow-x-auto">
-                  NEXT_PUBLIC_CONTRACT_ADDRESS=0x...
-                </code>
-              </div>
-
-              <div className="pixel-border-thin p-3 bg-gray-900/50">
-                <p className="text-[var(--accent-neon)] mb-2">6. Restart dev server:</p>
-                <code className="block bg-black/50 p-2 text-[9px] md:text-[10px] overflow-x-auto">
-                  npm run dev
-                </code>
-              </div>
-            </div>
-
-            <div className="mt-6 text-center">
-              <p className="text-[10px] md:text-xs text-gray-500 font-['Press_Start_2P'] leading-relaxed">
-                See DEPLOYMENT_GUIDE.md for detailed instructions
-              </p>
-            </div>
+        {/* Transaction hash */}
+        {hash && (
+          <div className="mt-4">
+            <a
+              href={`https://sepolia.basescan.org/tx/${hash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-pixel text-xs text-blue-400 hover:text-blue-300 underline"
+            >
+              View transaction
+            </a>
           </div>
-        </div>
+        )}
       </div>
-    </div>
-  );
-}
 
-/**
- * Error Fallback Component
- * Displays pixel-styled error message with retry option
- */
-function ErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
-  return (
-    <div className="w-full max-w-md mx-auto px-4">
-      <div className="pixel-card pixel-card-corners border-[var(--accent-red)] p-6 md:p-8">
-        <div className="text-center space-y-4">
-          <div className="text-4xl md:text-5xl animate-shake">⚠️</div>
-          <h2 className="text-base md:text-lg pixel-text-glow-red font-['Press_Start_2P']">
-            Error Loading
-          </h2>
-          <p className="text-xs md:text-sm text-gray-400 leading-relaxed font-['Press_Start_2P']">
-            {error.message || 'Failed to load game data'}
-          </p>
-          <button
-            onClick={reset}
-            className="pixel-button pixel-button-usurp w-full mt-4 text-xs md:text-sm"
-            aria-label="Retry loading game"
-          >
-            🔄 Retry
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Main Game Component
- * Wrapped with loading and error states
- */
-function GameContent() {
-  // State for king's message input
-  const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  // Check if contract is configured
-  const contractConfigured = isContractConfigured();
-
-  // Get current king data (only if contract is configured)
-  const { reignDuration, king } = useKingData();
-
-  // Handle initial loading state
-  useEffect(() => {
-    // If contract is not configured, show config screen after brief delay
-    if (!contractConfigured) {
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-
-    try {
-      // Mark as loaded once we have data
-      if (king !== undefined) {
-        setIsLoading(false);
-        setError(null);
-      } else {
-        // If no data after 3 seconds, something might be wrong
-        const timeout = setTimeout(() => {
-          if (king === undefined) {
-            setIsLoading(false);
-          }
-        }, 3000);
-        return () => clearTimeout(timeout);
-      }
-    } catch (err) {
-      setError(err as Error);
-      setIsLoading(false);
-    }
-  }, [king, contractConfigured]);
-
-  /**
-   * Handle successful throne seizure
-   * Clear message input on success
-   */
-  const handleSuccess = () => {
-    setMessage(''); // Clear message for next capture
-  };
-
-  /**
-   * Handle transaction error
-   */
-  const handleError = (error: Error) => {
-    // Error handling is done in the component itself
-  };
-
-  /**
-   * Retry loading after error
-   */
-  const handleRetry = () => {
-    setError(null);
-    setIsLoading(true);
-    window.location.reload();
-  };
-
-  // Show contract not configured screen
-  if (!contractConfigured && !isLoading) {
-    return <ContractNotConfigured />;
-  }
-
-  // Show error state
-  if (error) {
-    return <ErrorFallback error={error} reset={handleRetry} />;
-  }
-
-  // Show loading state
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
-
-  return (
-    <>
-      {/* ==================== LEADERBOARD ==================== */}
-      <div className="w-full">
-        <Suspense fallback={<div className="h-40 pixel-card animate-pulse" />}>
+      {/* Footer */}
+      <footer className="p-4 border-t border-pixel-border">
+        <div className="flex justify-center gap-6">
           <Leaderboard />
-        </Suspense>
-      </div>
-
-      {/* ==================== THRONE CARD ==================== */}
-      <div className="w-full flex justify-center px-4 sm:px-0">
-        <div className="w-full max-w-md">
-          <Suspense fallback={
-            <div className="pixel-throne-card pixel-card-corners min-h-[240px] md:min-h-[280px] animate-pulse" />
-          }>
-            <ThroneCard />
-          </Suspense>
+          <ShareButton />
         </div>
-      </div>
-
-      {/* ==================== GAME ACTIONS ==================== */}
-      <div className="w-full max-w-md mx-auto space-y-4 md:space-y-6 px-4 sm:px-0">
-        {/* Message Input */}
-        <div className="space-y-2 md:space-y-3">
-          <label
-            htmlFor="king-message"
-            className="block text-[10px] sm:text-xs text-gray-400 font-['Press_Start_2P'] leading-relaxed"
-          >
-            Your message as King:
-          </label>
-          <MessageInput
-            value={message}
-            onChange={setMessage}
-            placeholder={TEXTS.messagePlaceholder}
-          />
+        <div className="text-center mt-4">
+          <p className="font-pixel text-[10px] text-gray-600">
+            Built on Base
+          </p>
         </div>
+      </footer>
 
-        {/* Protection Timer (shown only when throne is protected) */}
-        <div className="flex justify-center py-2">
-          <ProtectionTimer
-            onExpired={() => {
-              // Timer expired, throne is vulnerable
-            }}
-          />
-        </div>
-
-        {/* Usurp Button with integrated attempts counter */}
-        <div className="w-full">
-          <UsurpButton
-            message={message}
-            onSuccess={handleSuccess}
-            onError={handleError}
-          />
-        </div>
-
-        {/* Share Button */}
-        <div className="w-full flex justify-center pt-2 md:pt-4">
-          <ShareButton
-            reignTime={reignDuration ? Number(reignDuration) : 0}
-            onClick={() => {
-              // Share button clicked
-            }}
-          />
-        </div>
-      </div>
-    </>
-  );
-}
-
-/**
- * Header Component
- * Displays timer with clock icon and settings button
- */
-function Header() {
-  // Timer state in format: hours:minutes:seconds:centiseconds (00:08:43:65)
-  const [time, setTime] = useState({ hours: 0, minutes: 8, seconds: 43, centiseconds: 65 });
-
-  useEffect(() => {
-    // Update timer every 10ms (for centisecond precision)
-    const interval = setInterval(() => {
-      setTime(prev => {
-        let { hours, minutes, seconds, centiseconds } = prev;
-
-        // Increment centiseconds
-        centiseconds += 1;
-
-        // Handle overflow
-        if (centiseconds >= 100) {
-          centiseconds = 0;
-          seconds += 1;
-        }
-
-        if (seconds >= 60) {
-          seconds = 0;
-          minutes += 1;
-        }
-
-        if (minutes >= 60) {
-          minutes = 0;
-          hours += 1;
-        }
-
-        // Keep hours within 2 digits (max 99)
-        if (hours >= 100) {
-          hours = 99;
-          minutes = 59;
-          seconds = 59;
-          centiseconds = 99;
-        }
-
-        return { hours, minutes, seconds, centiseconds };
-      });
-    }, 10);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  /**
-   * Format time to 00:08:43:65 format
-   */
-  const formatTime = () => {
-    const h = String(time.hours).padStart(2, '0');
-    const m = String(time.minutes).padStart(2, '0');
-    const s = String(time.seconds).padStart(2, '0');
-    const cs = String(time.centiseconds).padStart(2, '0');
-    return `${h}:${m}:${s}:${cs}`;
-  };
-
-  return (
-    <div className="w-full flex items-center justify-between px-3 py-3">
-      {/* Timer with Clock Icon */}
-      <div className="flex items-center gap-2">
-        <Clock
-          className="w-5 h-5 text-[var(--accent-cyan)]"
-          style={{
-            shapeRendering: 'crispEdges',
-            strokeWidth: 2,
-          }}
+      {/* Result overlay */}
+      {lastFlipResult && (
+        <ResultOverlay
+          won={lastFlipResult.won}
+          streak={lastFlipResult.streak}
+          isNewRecord={lastFlipResult.isNewRecord}
+          onDismiss={handleDismissResult}
         />
-        <div
-          className="text-xs sm:text-sm font-['Press_Start_2P'] text-[var(--accent-cyan)] neon-glow"
-          style={{
-            textShadow: '0 0 10px var(--accent-cyan), 0 0 20px var(--accent-cyan)',
-          }}
-        >
-          {formatTime()}
-        </div>
-      </div>
-
-      {/* Settings Button */}
-      <button
-        className="stone-frame p-2 transition-transform active:translate-y-0.5"
-        aria-label="Settings"
-      >
-        <Settings
-          className="w-5 h-5 text-gray-400"
-          style={{
-            shapeRendering: 'crispEdges',
-            strokeWidth: 2,
-          }}
-        />
-      </button>
-    </div>
-  );
-}
-
-/**
- * Main Throne Room Component
- * Displays isometric throne room with king sprite overlay
- */
-function ThroneRoom() {
-  return (
-    <div className="flex-grow flex items-center justify-center relative overflow-hidden px-4">
-      {/* Throne Room Container */}
-      <div className="relative w-full max-w-sm aspect-square flex items-center justify-center">
-        {/* Throne Room Background - Isometric dungeon aesthetic */}
-        <div
-          className="absolute inset-0 rounded-lg"
-          style={{
-            background: `
-              radial-gradient(ellipse at center,
-                rgba(100, 80, 150, 0.3) 0%,
-                rgba(50, 40, 80, 0.5) 40%,
-                rgba(20, 15, 40, 0.8) 80%,
-                rgba(5, 5, 16, 0.95) 100%
-              ),
-              linear-gradient(135deg,
-                rgba(60, 50, 100, 0.2) 0%,
-                rgba(40, 30, 70, 0.3) 50%,
-                rgba(20, 15, 40, 0.4) 100%
-              )
-            `,
-            boxShadow: `
-              inset 0 0 60px rgba(100, 80, 150, 0.2),
-              inset 0 0 120px rgba(50, 40, 80, 0.3),
-              0 0 40px rgba(0, 0, 0, 0.5)
-            `,
-          }}
-        />
-
-        {/* King Sprite Overlay */}
-        <div className="relative z-10 flex flex-col items-center justify-center">
-          {/* King character - using throne emoji as placeholder */}
-          <div
-            className="text-8xl"
-            style={{
-              filter: 'drop-shadow(0 10px 20px rgba(0, 0, 0, 0.6))',
-              imageRendering: 'pixelated',
-            }}
-          >
-            🤴
-          </div>
-
-          {/* Throne base */}
-          <div
-            className="text-6xl -mt-4"
-            style={{
-              filter: 'drop-shadow(0 5px 15px rgba(0, 0, 0, 0.8))',
-              imageRendering: 'pixelated',
-            }}
-          >
-            👑
-          </div>
-        </div>
-
-        {/* Dust/Light Effect Overlay */}
-        <div className="dust-effect" />
-
-        {/* Additional atmospheric light effect */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: `
-              radial-gradient(circle at 50% 30%,
-                rgba(0, 255, 255, 0.05) 0%,
-                transparent 50%
-              )
-            `,
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/**
- * Footer Component
- * Big red action button with 3D shadow effect and cooldown state
- */
-function Footer() {
-  const [cooldownTime, setCooldownTime] = useState<number>(0);
-  const [isOnCooldown, setIsOnCooldown] = useState(false);
-
-  /**
-   * Handle button click - trigger cooldown
-   */
-  const handleAttack = () => {
-    if (isOnCooldown) return;
-
-    // Start cooldown (3 seconds as per game design)
-    setIsOnCooldown(true);
-    setCooldownTime(3);
-  };
-
-  /**
-   * Cooldown timer effect
-   */
-  useEffect(() => {
-    if (!isOnCooldown) return;
-
-    const interval = setInterval(() => {
-      setCooldownTime((prev) => {
-        if (prev <= 0.1) {
-          setIsOnCooldown(false);
-          return 0;
-        }
-        return prev - 0.1;
-      });
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [isOnCooldown]);
-
-  return (
-    <div className="w-full">
-      <button
-        className="footer-action-button"
-        disabled={isOnCooldown}
-        onClick={handleAttack}
-        aria-label={isOnCooldown ? `Cooldown ${cooldownTime.toFixed(1)}s` : 'Attack'}
-      >
-        {isOnCooldown ? `COOLDOWN ${cooldownTime.toFixed(1)}s` : '⚔️ USURP ⚔️'}
-      </button>
-    </div>
-  );
-}
-
-/**
- * Main Home Page Export
- * Includes error boundary and layout wrapper
- */
-export default function Home() {
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    // Global error handler for uncaught errors
-    const handleError = (event: ErrorEvent) => {
-      setError(new Error(event.message));
-    };
-
-    window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
-  }, []);
-
-  const handleReset = () => {
-    setError(null);
-  };
-
-  if (error) {
-    return (
-      <main className="flex h-screen flex-col items-center justify-center p-4 bg-[var(--bg-primary)]">
-        <ErrorFallback error={error} reset={handleReset} />
-      </main>
-    );
-  }
-
-  return (
-    <main className="h-screen flex flex-col bg-[var(--bg-primary)] overflow-hidden">
-      {/* ==================== HEADER WITH TIMER ==================== */}
-      <Header />
-
-      {/* ==================== MAIN THRONE ROOM ==================== */}
-      <ThroneRoom />
-
-      {/* ==================== FOOTER WITH ACTION BUTTON ==================== */}
-      <Footer />
+      )}
     </main>
   );
 }

@@ -1,33 +1,19 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
-import "../src/KingOfTheBase.sol";
+import "../src/CoinFlip.sol";
 
-/**
- * @title Deploy Script for KingOfTheBase
- * @notice Foundry script to deploy KingOfTheBase contract to Base Sepolia
- * @dev Usage: forge script script/Deploy.s.sol --rpc-url base_sepolia --broadcast --verify
- */
-contract Deploy is Script {
-    function run() external returns (KingOfTheBase) {
-        // Get deployer private key from environment
+contract DeployCoinFlip is Script {
+    function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
-        // Deploy the contract
-        KingOfTheBase kingOfTheBase = new KingOfTheBase();
+        CoinFlip coinFlip = new CoinFlip();
 
-        // Log the deployed contract address
-        console.log("KingOfTheBase deployed to:", address(kingOfTheBase));
-        console.log("Deployer:", vm.addr(deployerPrivateKey));
-        console.log("Chain ID:", block.chainid);
+        console.log("CoinFlip deployed at:", address(coinFlip));
 
-        // Stop broadcasting
         vm.stopBroadcast();
-
-        return kingOfTheBase;
     }
 }

@@ -1,165 +1,94 @@
-/**
- * KingOfTheBase Contract Constants
- * Contract ABI and deployed address for Base Sepolia testnet
- */
+import { CONTRACT_ADDRESS } from "./constants";
 
-/**
- * Contract address from environment variable
- * Set NEXT_PUBLIC_CONTRACT_ADDRESS in .env.local after deployment
- */
-const rawAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
-export const CONTRACT_ADDRESS = (rawAddress || '0x0000000000000000000000000000000000000000') as `0x${string}`;
-
-/**
- * Check if contract address is configured
- * Returns false if address is empty or zero address
- */
-export const isContractConfigured = (): boolean => {
-  return Boolean(rawAddress) && rawAddress !== '0x0000000000000000000000000000000000000000';
-};
-
-/**
- * KingOfTheBase Contract ABI
- * Generated from contracts/src/KingOfTheBase.sol
- */
-export const CONTRACT_ABI = [
+// CoinFlip contract ABI
+export const COINFLIP_ABI = [
   {
-    type: 'function',
-    name: 'seizeThrone',
-    stateMutability: 'nonpayable',
+    type: "function",
+    name: "flip",
+    inputs: [{ name: "guessHeads", type: "bool", internalType: "bool" }],
+    outputs: [
+      { name: "won", type: "bool", internalType: "bool" },
+      { name: "wasHeads", type: "bool", internalType: "bool" },
+    ],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "getPlayerStats",
+    inputs: [{ name: "player", type: "address", internalType: "address" }],
+    outputs: [
+      { name: "wins", type: "uint256", internalType: "uint256" },
+      { name: "losses", type: "uint256", internalType: "uint256" },
+      { name: "currentStreak", type: "uint256", internalType: "uint256" },
+      { name: "maxStreak", type: "uint256", internalType: "uint256" },
+      { name: "totalFlips", type: "uint256", internalType: "uint256" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getLeaderboard",
+    inputs: [],
+    outputs: [
+      {
+        name: "entries",
+        type: "tuple[]",
+        internalType: "struct CoinFlip.LeaderboardEntry[]",
+        components: [
+          { name: "player", type: "address", internalType: "address" },
+          { name: "maxStreak", type: "uint256", internalType: "uint256" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getLeaderboardSize",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "playerStats",
+    inputs: [{ name: "", type: "address", internalType: "address" }],
+    outputs: [
+      { name: "wins", type: "uint256", internalType: "uint256" },
+      { name: "losses", type: "uint256", internalType: "uint256" },
+      { name: "currentStreak", type: "uint256", internalType: "uint256" },
+      { name: "maxStreak", type: "uint256", internalType: "uint256" },
+      { name: "totalFlips", type: "uint256", internalType: "uint256" },
+      { name: "lastFlipBlock", type: "uint256", internalType: "uint256" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "event",
+    name: "FlipResult",
     inputs: [
-      {
-        name: 'message',
-        type: 'string',
-      },
+      { name: "player", type: "address", indexed: true, internalType: "address" },
+      { name: "guessedHeads", type: "bool", indexed: false, internalType: "bool" },
+      { name: "wasHeads", type: "bool", indexed: false, internalType: "bool" },
+      { name: "won", type: "bool", indexed: false, internalType: "bool" },
+      { name: "currentStreak", type: "uint256", indexed: false, internalType: "uint256" },
+      { name: "maxStreak", type: "uint256", indexed: false, internalType: "uint256" },
     ],
-    outputs: [],
+    anonymous: false,
   },
   {
-    type: 'function',
-    name: 'getKingData',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      {
-        name: 'king',
-        type: 'address',
-      },
-      {
-        name: 'reignDuration',
-        type: 'uint256',
-      },
-      {
-        name: 'message',
-        type: 'string',
-      },
-      {
-        name: 'isProtected',
-        type: 'bool',
-      },
-    ],
-  },
-  {
-    type: 'function',
-    name: 'getLeaderboard',
-    stateMutability: 'view',
+    type: "event",
+    name: "NewHighScore",
     inputs: [
-      {
-        name: 'players',
-        type: 'address[]',
-      },
+      { name: "player", type: "address", indexed: true, internalType: "address" },
+      { name: "maxStreak", type: "uint256", indexed: false, internalType: "uint256" },
     ],
-    outputs: [
-      {
-        name: 'times',
-        type: 'uint256[]',
-      },
-    ],
-  },
-  {
-    type: 'function',
-    name: 'currentKing',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'address',
-      },
-    ],
-  },
-  {
-    type: 'function',
-    name: 'reignStartTime',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-      },
-    ],
-  },
-  {
-    type: 'function',
-    name: 'protectionEndTime',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-      },
-    ],
-  },
-  {
-    type: 'function',
-    name: 'kingMessage',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'string',
-      },
-    ],
-  },
-  {
-    type: 'function',
-    name: 'totalReignTime',
-    stateMutability: 'view',
-    inputs: [
-      {
-        name: '',
-        type: 'address',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-      },
-    ],
-  },
-  {
-    type: 'event',
-    name: 'ThroneSeized',
-    inputs: [
-      {
-        name: 'newKing',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'message',
-        type: 'string',
-        indexed: false,
-      },
-      {
-        name: 'timestamp',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
+    anonymous: false,
   },
 ] as const;
+
+// Contract configuration for wagmi
+export const coinFlipContract = {
+  address: CONTRACT_ADDRESS,
+  abi: COINFLIP_ABI,
+} as const;
