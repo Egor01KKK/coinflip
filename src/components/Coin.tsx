@@ -7,57 +7,66 @@ type CoinProps = {
 };
 
 export function Coin({ isFlipping, result, showResult }: CoinProps) {
-  // Determine what to show on the coin
-  const getCoinContent = () => {
-    if (isFlipping) {
-      return (
-        <div className="animate-spin">
-          <span className="text-5xl">?</span>
-        </div>
-      );
-    }
+  // Determine coin appearance
+  const isHeads = showResult && result === "heads";
+  const isTails = showResult && result === "tails";
+  const isIdle = !isFlipping && !showResult;
 
-    if (showResult && result) {
-      return (
-        <div className="flex flex-col items-center animate-bounce-in">
-          <span className="text-6xl font-bold">{result === "heads" ? "H" : "T"}</span>
-          <span className="text-[10px] font-pixel mt-1 text-yellow-900">
-            {result === "heads" ? "HEADS" : "TAILS"}
-          </span>
-        </div>
-      );
-    }
+  // Coin colors based on state
+  const coinBg = isTails
+    ? "bg-gradient-to-br from-gray-300 to-gray-500"
+    : "bg-gradient-to-br from-gold to-gold-dark";
 
-    return <span className="text-5xl">?</span>;
-  };
+  const coinBorder = isTails
+    ? "border-gray-400"
+    : "border-yellow-600";
 
   return (
     <div className="flex flex-col items-center justify-center">
       {/* Coin */}
       <div
         className={`
-          relative w-36 h-36
+          relative w-32 h-32 sm:w-40 sm:h-40
           rounded-full
           flex items-center justify-center
-          ${result === "tails" && showResult
-            ? "bg-gradient-to-br from-gray-300 to-gray-500 border-gray-400"
-            : "bg-gradient-to-br from-gold to-gold-dark border-yellow-600"
-          }
-          border-4
-          shadow-lg
-          ${isFlipping ? "" : "animate-pulse-glow"}
+          ${coinBg}
+          border-4 ${coinBorder}
+          shadow-xl
+          ${isFlipping ? "animate-spin" : ""}
+          ${!isFlipping && !isTails ? "animate-pulse-glow" : ""}
           transition-all duration-300
         `}
       >
-        {getCoinContent()}
+        {/* Coin content */}
+        {isFlipping ? (
+          // Spinning state
+          <span className="text-5xl sm:text-6xl font-bold text-yellow-900/70">?</span>
+        ) : showResult && result ? (
+          // Result state
+          <div className="flex flex-col items-center animate-bounce-in">
+            <span className="text-5xl sm:text-6xl">{result === "heads" ? "🪙" : "🔘"}</span>
+          </div>
+        ) : (
+          // Idle state - show tap to play
+          <div className="flex flex-col items-center">
+            <span className="text-4xl sm:text-5xl">🪙</span>
+          </div>
+        )}
       </div>
 
-      {/* Result label below coin */}
+      {/* Result label */}
       {showResult && result && !isFlipping && (
         <div className="mt-4 font-pixel text-xl text-center animate-bounce-in">
-          <span className={result === "heads" ? "text-gold" : "text-gray-400"}>
+          <span className={result === "heads" ? "text-gold" : "text-gray-300"}>
             {result === "heads" ? "HEADS!" : "TAILS!"}
           </span>
+        </div>
+      )}
+
+      {/* Idle hint */}
+      {isIdle && (
+        <div className="mt-4 font-pixel text-xs text-gray-500">
+          Pick a side below
         </div>
       )}
     </div>
