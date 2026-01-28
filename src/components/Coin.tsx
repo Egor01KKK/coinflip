@@ -1,106 +1,63 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 type CoinProps = {
   isFlipping: boolean;
   result: "heads" | "tails" | null;
-  onAnimationEnd?: () => void;
+  showResult: boolean;
 };
 
-export function Coin({ isFlipping, result, onAnimationEnd }: CoinProps) {
-  const [showResult, setShowResult] = useState(false);
-  const [animationClass, setAnimationClass] = useState("");
-
-  useEffect(() => {
+export function Coin({ isFlipping, result, showResult }: CoinProps) {
+  // Determine what to show on the coin
+  const getCoinContent = () => {
     if (isFlipping) {
-      setShowResult(false);
-      setAnimationClass("animate-coin-spin");
+      return (
+        <div className="animate-spin">
+          <span className="text-5xl">?</span>
+        </div>
+      );
     }
-  }, [isFlipping]);
 
-  useEffect(() => {
-    if (result && !isFlipping) {
-      // Start flip animation
-      setAnimationClass("animate-coin-flip");
-
-      // Show result after animation
-      const timer = setTimeout(() => {
-        setShowResult(true);
-        setAnimationClass("animate-bounce-in");
-        onAnimationEnd?.();
-      }, 1000);
-
-      return () => clearTimeout(timer);
+    if (showResult && result) {
+      return (
+        <div className="flex flex-col items-center animate-bounce-in">
+          <span className="text-6xl font-bold">{result === "heads" ? "H" : "T"}</span>
+          <span className="text-[10px] font-pixel mt-1 text-yellow-900">
+            {result === "heads" ? "HEADS" : "TAILS"}
+          </span>
+        </div>
+      );
     }
-  }, [result, isFlipping, onAnimationEnd]);
+
+    return <span className="text-5xl">?</span>;
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center py-8">
-      {/* Coin container */}
+    <div className="flex flex-col items-center justify-center">
+      {/* Coin */}
       <div
         className={`
-          relative w-32 h-32 md:w-40 md:h-40
-          ${animationClass}
-          transition-transform duration-300
+          relative w-36 h-36
+          rounded-full
+          flex items-center justify-center
+          ${result === "tails" && showResult
+            ? "bg-gradient-to-br from-gray-300 to-gray-500 border-gray-400"
+            : "bg-gradient-to-br from-gold to-gold-dark border-yellow-600"
+          }
+          border-4
+          shadow-lg
+          ${isFlipping ? "" : "animate-pulse-glow"}
+          transition-all duration-300
         `}
-        style={{ perspective: "1000px" }}
       >
-        {/* Coin face */}
-        <div
-          className={`
-            absolute inset-0 rounded-full
-            flex items-center justify-center
-            text-6xl md:text-7xl
-            ${
-              showResult && result === "heads"
-                ? "bg-gradient-to-br from-gold to-gold-dark"
-                : showResult && result === "tails"
-                ? "bg-gradient-to-br from-gray-400 to-gray-600"
-                : "bg-gradient-to-br from-gold to-gold-dark"
-            }
-            shadow-lg
-            border-4 border-yellow-600
-            animate-pulse-glow
-          `}
-        >
-          {/* Coin content */}
-          <div className="flex flex-col items-center">
-            {isFlipping ? (
-              <span className="animate-pulse">?</span>
-            ) : showResult && result ? (
-              <>
-                <span>{result === "heads" ? "H" : "T"}</span>
-                <span className="text-xs font-pixel mt-1 text-yellow-900">
-                  {result.toUpperCase()}
-                </span>
-              </>
-            ) : (
-              <span className="text-4xl">?</span>
-            )}
-          </div>
-        </div>
-
-        {/* Coin edge effect */}
-        <div
-          className={`
-            absolute inset-1 rounded-full
-            border-2 border-yellow-500/30
-            pointer-events-none
-          `}
-        />
+        {getCoinContent()}
       </div>
 
-      {/* Result text */}
-      {showResult && result && (
-        <div
-          className={`
-            mt-6 font-pixel text-lg
-            ${result === "heads" ? "text-gold" : "text-gray-400"}
-            animate-bounce-in
-          `}
-        >
-          {result === "heads" ? "HEADS!" : "TAILS!"}
+      {/* Result label below coin */}
+      {showResult && result && !isFlipping && (
+        <div className="mt-4 font-pixel text-xl text-center animate-bounce-in">
+          <span className={result === "heads" ? "text-gold" : "text-gray-400"}>
+            {result === "heads" ? "HEADS!" : "TAILS!"}
+          </span>
         </div>
       )}
     </div>

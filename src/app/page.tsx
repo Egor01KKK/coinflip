@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useAccount, useWatchContractEvent } from "wagmi";
+import { useState, useCallback, useEffect } from "react";
+import { useAccount } from "wagmi";
 import { Coin } from "@/components/Coin";
 import { FlipButtons } from "@/components/FlipButtons";
 import { Stats } from "@/components/Stats";
@@ -10,71 +10,71 @@ import { ShareButton } from "@/components/ShareButton";
 import { ResultOverlay } from "@/components/ResultOverlay";
 import { ConnectButton } from "@/components/ConnectButton";
 import { LoginScreen } from "@/components/LoginScreen";
-import { useFlip } from "@/hooks/useFlip";
+import { useFlip, type FlipResult } from "@/hooks/useFlip";
 import { usePlayerStats } from "@/hooks/usePlayerStats";
-import { coinFlipContract } from "@/lib/contract";
 
 export default function Home() {
   const { isConnected } = useAccount();
-  const { flip, isFlipping, setResult, resetFlip, error, hash } = useFlip();
+  const { flip, isFlipping, isConfirmed, processResult, resetFlip, error, hash } = useFlip();
   const { stats, refetch: refetchStats } = usePlayerStats();
 
   const [coinResult, setCoinResult] = useState<"heads" | "tails" | null>(null);
-  const [lastFlipResult, setLastFlipResult] = useState<{
-    won: boolean;
-    streak: number;
-    isNewRecord: boolean;
-  } | null>(null);
+  const [showCoinResult, setShowCoinResult] = useState(false);
+  const [flipResult, setFlipResult] = useState<FlipResult | null>(null);
+  const [showResultOverlay, setShowResultOverlay] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [prevMaxStreak, setPrevMaxStreak] = useState(0);
 
-  // Watch for FlipResult events
-  useWatchContractEvent({
-    ...coinFlipContract,
-    eventName: "FlipResult",
-    onLogs(logs) {
-      const log = logs[0];
-      if (log && log.args) {
-        const { guessedHeads, wasHeads, won, currentStreak, maxStreak } = log.args;
+  // Process result when transaction is confirmed
+  useEffect(() => {
+    if (isConfirmed) {
+      processResult().then((result) => {
+        if (result) {
+          // Show coin result
+          setCoinResult(result.wasHeads ? "heads" : "tails");
+          setShowCoinResult(true);
+          setFlipResult(result);
 
-        // Update coin result
-        setCoinResult(wasHeads ? "heads" : "tails");
+          // Show result overlay after short delay
+          setTimeout(() => {
+            setShowResultOverlay(true);
+            refetchStats();
+          }, 500);
+        }
+      });
+    }
+  }, [isConfirmed, processResult, refetchStats]);
 
-        // Update flip result
-        setResult({
-          won: won ?? false,
-          wasHeads: wasHeads ?? false,
-          guessedHeads: guessedHeads ?? false,
-        });
-
-        // Check if new record
-        const prevMaxStreak = stats?.maxStreak ?? 0n;
-        const isNewRecord = maxStreak !== undefined && maxStreak > prevMaxStreak;
-
-        setLastFlipResult({
-          won: won ?? false,
-          streak: Number(currentStreak ?? 0),
-          isNewRecord,
-        });
-
-        // Refetch stats
-        refetchStats();
-      }
-    },
-  });
+  // Track previous max streak for "new record" detection
+  useEffect(() => {
+    if (stats) {
+      setPrevMaxStreak(Number(stats.maxStreak));
+    }
+  }, [stats]);
 
   // Handle flip action
   const handleFlip = useCallback(
     async (guessHeads: boolean) => {
+      // Reset previous state
       setCoinResult(null);
-      setLastFlipResult(null);
+      setShowCoinResult(false);
+      setFlipResult(null);
+      setShowResultOverlay(false);
+
+      // Store current max streak before flip
+      if (stats) {
+        setPrevMaxStreak(Number(stats.maxStreak));
+      }
+
+      // Execute flip
       await flip(guessHeads);
     },
-    [flip]
+    [flip, stats]
   );
 
-  // Handle result overlay dismiss
-  const handleDismissResult = useCallback(() => {
-    setLastFlipResult(null);
+  // Close result overlay
+  const handleCloseResult = useCallback(() => {
+    setShowResultOverlay(false);
     resetFlip();
   }, [resetFlip]);
 
@@ -83,9 +83,11 @@ export default function Home() {
     return <LoginScreen />;
   }
 
+  const isNewRecord = flipResult ? flipResult.maxStreak > prevMaxStreak : false;
+
   // Game screen
   return (
-    <main className="min-h-screen flex flex-col">
+    <main className="min-h-screen flex flex-col bg-pixel-bg">
       {/* Header */}
       <header className="flex justify-between items-center p-4 border-b border-pixel-border">
         <h1 className="font-pixel text-lg text-gold">COINFLIP</h1>
@@ -94,7 +96,7 @@ export default function Home() {
             onClick={() => setShowStats(!showStats)}
             className="font-pixel text-xs text-gray-400 hover:text-gold transition-colors"
           >
-            Stats
+            {showStats ? "Hide" : "Stats"}
           </button>
           <ConnectButton />
         </div>
@@ -117,8 +119,17 @@ export default function Home() {
           <Coin
             isFlipping={isFlipping}
             result={coinResult}
-            onAnimationEnd={() => {}}
+            showResult={showCoinResult}
           />
+        </div>
+
+        {/* Status text */}
+        <div className="h-8 mb-4">
+          {isFlipping && (
+            <p className="font-pixel text-sm text-gray-400 animate-pulse">
+              Flipping...
+            </p>
+          )}
         </div>
 
         {/* Flip buttons */}
@@ -130,16 +141,18 @@ export default function Home() {
 
         {/* Error message */}
         {error && (
-          <div className="mt-4 p-3 bg-red-500/20 border border-red-500 rounded-lg">
-            <p className="font-pixel text-xs text-red-400">
+          <div className="mt-4 p-3 bg-red-500/20 border border-red-500 rounded-lg max-w-xs">
+            <p className="font-pixel text-xs text-red-400 text-center">
               {error.message.includes("Wait for next block")
-                ? "Wait for next block to flip again!"
-                : "Transaction failed. Try again!"}
+                ? "Wait a moment before flipping again!"
+                : error.message.includes("User rejected")
+                ? "Transaction cancelled"
+                : "Error! Try again."}
             </p>
           </div>
         )}
 
-        {/* Transaction hash */}
+        {/* Transaction link */}
         {hash && (
           <div className="mt-4">
             <a
@@ -168,12 +181,12 @@ export default function Home() {
       </footer>
 
       {/* Result overlay */}
-      {lastFlipResult && (
+      {showResultOverlay && flipResult && (
         <ResultOverlay
-          won={lastFlipResult.won}
-          streak={lastFlipResult.streak}
-          isNewRecord={lastFlipResult.isNewRecord}
-          onDismiss={handleDismissResult}
+          won={flipResult.won}
+          streak={flipResult.currentStreak}
+          isNewRecord={isNewRecord}
+          onClose={handleCloseResult}
         />
       )}
     </main>

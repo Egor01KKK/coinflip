@@ -1,18 +1,21 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { coinFlipContract } from "@/lib/contract";
+import { useWriteContract, useWaitForTransactionReceipt, usePublicClient } from "wagmi";
+import { decodeEventLog } from "viem";
+import { coinFlipContract, COINFLIP_ABI } from "@/lib/contract";
 
 export type FlipResult = {
   won: boolean;
   wasHeads: boolean;
   guessedHeads: boolean;
+  currentStreak: number;
+  maxStreak: number;
 };
 
 export function useFlip() {
   const [lastResult, setLastResult] = useState<FlipResult | null>(null);
-  const [isFlipping, setIsFlipping] = useState(false);
+  const publicClient = usePublicClient();
 
   const {
     writeContract,
@@ -30,9 +33,51 @@ export function useFlip() {
     hash,
   });
 
+  // Parse result from transaction receipt
+  const parseResultFromReceipt = useCallback(async () => {
+    if (!receipt || !publicClient) return null;
+
+    try {
+      // Find FlipResult event in logs
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: COINFLIP_ABI,
+            data: log.data,
+            topics: log.topics,
+          });
+
+          if (decoded.eventName === "FlipResult") {
+            const args = decoded.args as {
+              player: string;
+              guessedHeads: boolean;
+              wasHeads: boolean;
+              won: boolean;
+              currentStreak: bigint;
+              maxStreak: bigint;
+            };
+
+            return {
+              won: args.won,
+              wasHeads: args.wasHeads,
+              guessedHeads: args.guessedHeads,
+              currentStreak: Number(args.currentStreak),
+              maxStreak: Number(args.maxStreak),
+            };
+          }
+        } catch {
+          // Not our event, continue
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing receipt:", error);
+    }
+
+    return null;
+  }, [receipt, publicClient]);
+
   const flip = useCallback(
     async (guessHeads: boolean) => {
-      setIsFlipping(true);
       setLastResult(null);
 
       try {
@@ -43,48 +88,36 @@ export function useFlip() {
         });
       } catch (error) {
         console.error("Flip error:", error);
-        setIsFlipping(false);
       }
     },
     [writeContract]
   );
 
-  // Parse the result from transaction logs when confirmed
-  const parseResult = useCallback(() => {
-    if (!receipt || !isConfirmed) return null;
+  // Process result when confirmed
+  const processResult = useCallback(async () => {
+    if (isConfirmed && receipt) {
+      const result = await parseResultFromReceipt();
+      if (result) {
+        setLastResult(result);
+        return result;
+      }
+    }
+    return null;
+  }, [isConfirmed, receipt, parseResultFromReceipt]);
 
-    // Find FlipResult event in logs
-    const flipResultLog = receipt.logs.find((log) => {
-      // FlipResult event topic
-      return log.topics[0] === "0x" + "FlipResult".padEnd(64, "0"); // This won't work, need proper topic
-    });
-
-    // For now, we'll derive result from the transaction success
-    // In production, properly decode the event log
-    return lastResult;
-  }, [receipt, isConfirmed, lastResult]);
-
-  // Reset state for new flip
   const resetFlip = useCallback(() => {
     reset();
     setLastResult(null);
-    setIsFlipping(false);
   }, [reset]);
-
-  // Set result from event (called by parent component listening to events)
-  const setResult = useCallback((result: FlipResult) => {
-    setLastResult(result);
-    setIsFlipping(false);
-  }, []);
 
   return {
     flip,
-    isFlipping: isFlipping || isWritePending || isConfirming,
+    isFlipping: isWritePending || isConfirming,
     isPending: isWritePending,
     isConfirming,
     isConfirmed,
     lastResult,
-    setResult,
+    processResult,
     resetFlip,
     error: writeError,
     hash,
